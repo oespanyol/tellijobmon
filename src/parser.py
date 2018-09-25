@@ -8,8 +8,7 @@ __email__     = "oriol.espanyol@eumetsat.int"
 __status__    = "Development"
 
 import re
-import pandas as pd
-
+import sqlalchemy
 
 def parse(filepath):
     """
@@ -25,45 +24,32 @@ def parse(filepath):
         text = file.read()
         file.close()
 
-
         reg_match = _RegExLib(text)
 
-        channel_content    = reg_match.channel   .group('channel_content'   )
-        accounting_content = reg_match.accounting.group('accounting_content')
-        scheduling_content = reg_match.scheduling.group('scheduling_content')
-        recipients_content = reg_match.recipients.group('recipients_content')
-        files_content      = reg_match.files     .group('files_content'     )
+        # TODO: Can be streamlined to match for the names of the sections and iterate
+        #       Code is compacter and more extandable but, it might be less readable
+        channel_content    = ['channel',    reg_match.channel   .group('channel_content'   )]
+        accounting_content = ['accounting', reg_match.accounting.group('accounting_content')]
+        scheduling_content = ['scheduling', reg_match.scheduling.group('scheduling_content')]
+        recipients_content = ['recipients', reg_match.recipients.group('recipients_content')]
+        files_content      = ['files',      reg_match.files     .group('files_content'     )]
 
-        #print(channel_content)
-        for line in channel_content.splitlines():
-             if line.strip():
-                 print(line)
+        # Put all contents together in one list
+        job_contents = [channel_content, accounting_content, scheduling_content, recipients_content, files_content] 
 
-        #print(accounting_content)
-        for line in accounting_content.splitlines():
-             if line.strip():
-                 print(line)
-
-        #print(scheduling_content)
-        for line in scheduling_content.splitlines():
-             if line.strip():
-                 print(line)
-
-        #print(recipients_content)
-        for line in recipients_content.splitlines():
-             if line.strip():
-                 print(line)
-
-        #print(files_content)
-        for line in files_content.splitlines():
-             if line.strip():
-                 print(line)
-
+        # Iterate through the list of contents to prepend the name of the section
+        for content in job_contents:
+            prefix = content[0]
+            lines  = content[1]
+            for line in lines.splitlines():
+                if line.strip():
+                    # Prepend the name of the section
+                    section_line = prefix + '_' + line
+                    print(section_line)
 
         #for filel in reg_match.filel:
             #filel_content = filel.group('filel_content')
             #print(filel_content)
-
 
 class _RegExLib:
     """
@@ -90,5 +76,6 @@ class _RegExLib:
 
 
 if __name__ == '__main__':
+    
     filepath = 'sample.job'
     data = parse(filepath)
