@@ -25,6 +25,7 @@ def parse(filepath):
         text = file.read()
         file.close()
 
+
         reg_match = _RegExLib(text)
 
         channel_content    = reg_match.channel   .group('channel_content'   )
@@ -33,11 +34,30 @@ def parse(filepath):
         recipients_content = reg_match.recipients.group('recipients_content')
         files_content      = reg_match.files     .group('files_content'     )
 
-        print(channel_content)
-        print(accounting_content)
-        print(scheduling_content)
-        print(recipients_content)
-        print(files_content)
+        #print(channel_content)
+        for line in channel_content.splitlines():
+             if line.strip():
+                 print(line)
+
+        #print(accounting_content)
+        for line in accounting_content.splitlines():
+             if line.strip():
+                 print(line)
+
+        #print(scheduling_content)
+        for line in scheduling_content.splitlines():
+             if line.strip():
+                 print(line)
+
+        #print(recipients_content)
+        for line in recipients_content.splitlines():
+             if line.strip():
+                 print(line)
+
+        #print(files_content)
+        for line in files_content.splitlines():
+             if line.strip():
+                 print(line)
 
 
         #for filel in reg_match.filel:
