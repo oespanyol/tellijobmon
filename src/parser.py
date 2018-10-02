@@ -114,7 +114,7 @@ class Job(Base):
     channel_name                                = Column(String  )
     accounting_customer                         = Column(String  )
     scheduling_allow_recipient_modifications    = Column(String  )
-    scheduling_start_time                       = Column(DateTime)
+    scheduling_start_time                       = Column(Boolean )
     scheduling_priority                         = Column(Integer )
     scheduling_retransmission_interval          = Column(Integer )
     scheduling_start_time_window                = Column(Integer )
@@ -143,7 +143,7 @@ class Job(Base):
         self.files_integrity_check = str2bool(jobdict['files_integrity_check'])
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
-        self.scheduling_allow_recipient_modifications = jobdict['scheduling_allow_recipient_modifications']
+        self.scheduling_allow_recipient_modifications = str2bool(jobdict['scheduling_allow_recipient_modifications'])
         self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'], "%Y-%m-%d %H:%M:%S")
         self.scheduling_priority = int(jobdict['scheduling_priority'])
         self.scheduling_retransmission_interval = int(jobdict['scheduling_retransmission_interval'])
@@ -229,6 +229,7 @@ class Job(Base):
 def str2bool(v):
     # TODO : handle the 'False' cases and return error if not found
     return v.lower() in ("yes", "true", "t", "1")
+
 
 class _InitPersist:
     """
