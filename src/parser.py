@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import re
+import datetime
 # SQLAlchemy
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import time
-import datetime
+
 
 __author__    = "Oriol Espanyol"
 __copyright__ = "Copyright 2018, EUMETCast Terrestrial Pathfinder-II"
@@ -42,9 +42,11 @@ def parse(pfilepath):
         scheduling_content = ['scheduling', reg_match.scheduling.group('scheduling_content')]
         recipients_content = ['recipients', reg_match.recipients.group('recipients_content')]
         files_content      = ['files',      reg_match.files     .group('files_content'     )]
+        system_content     = ['system',     reg_match.system    .group('system_content'    )]
 
         # Put all contents together in one list
-        job_contents = [channel_content, accounting_content, scheduling_content, recipients_content, files_content] 
+        job_contents = [channel_content, accounting_content, scheduling_content,
+                        recipients_content, files_content, system_content]
 
         # Instantiate a the job dictionary to keep all the keys and values
         job_dict = {}
@@ -57,13 +59,14 @@ def parse(pfilepath):
                     # Prepend the name of the section
                     section_line = prefix + '_' + line
                     # Split line on "=" separator to generate the key value pair
+                    print(section_line)
                     job_kvp = section_line.split("=", 2)
                     job_dict[job_kvp[0]] = job_kvp[1]
 
+        print(job_dict)
         session = _InitPersist().session
 
         job = Job(job_dict)
-        print(job)
 
         session.add(job)
         my_job = session.query(Job).filter_by(channel_name='T01-EPS-A-11').first()
@@ -89,6 +92,7 @@ class _RegExLib:
     _reg_recipients = re.compile(r'''^\[recipients\]    (?P<recipients_content>[\s\S]+?)    (?=^\[|\Z|^\#)''', re.MULTILINE | re.VERBOSE)
     _reg_files      = re.compile(r'''^\[files\]         (?P<files_content>[\s\S]+?)         (?=^\[|\Z|^\#)''', re.MULTILINE | re.VERBOSE)
     _reg_filel      = re.compile(r'''^\[file\]          (?P<filel_content>[\s\S]+?)         (?=^\[|\Z|^\#)''', re.MULTILINE | re.VERBOSE)
+    _reg_system     = re.compile(r'''^\[system\]        (?P<system_content>[\s\S]+?)        (?=^\[|\Z|^\#)''', re.MULTILINE | re.VERBOSE)
 
     def __init__(self, text):
         self.channel    = self._reg_channel    .search(text)
@@ -97,12 +101,16 @@ class _RegExLib:
         self.recipients = self._reg_recipients .search(text)
         self.files      = self._reg_files      .search(text)
         self.filel      = self._reg_filel      .finditer(text)
+        self.system     = self._reg_system     .search(text)
 
 
 class Job(Base):
     __tablename__ = 'jobs'
-
-    id = Column(Integer, primary_key=True)
+    files_acknowledge_id = Column(String, primary_key=True)
+    files_source_directory                      = Column(String  )
+    files_target_directory                      = Column(String  )
+    files_state_files_directory                 = Column(String  )
+    files_integrity_check                       = Column(String  )  # TODO: Change to boolean
     channel_name                                = Column(String  )
     accounting_customer                         = Column(String  )
     scheduling_allow_recipient_modifications    = Column(String  )
@@ -119,8 +127,20 @@ class Job(Base):
     scheduling_request_acknowledgements         = Column(Integer )
     scheduling_atomicity                        = Column(Integer )
     scheduling_client_file_database_expire_time = Column(Integer )
+    recipients_file                             = Column(String  )
+    system_is_complete                          = Column(String  )  # TODO: Change to boolean
+    system_nr_of_transmitted_bytes              = Column(Integer )
+    system_completion_percentage                = Column(Float )
+    system_next_start_time                      = Column(DateTime)
+    system_transmissions_done                   = Column(Integer )
+    system_packet_naks_allowed                  = Column(String  )  # TODO: Change to boolean
 
     def __init__(self, jobdict):
+        self.files_acknowledge_id = jobdict['files_acknowledge_id']
+        self.files_source_directory = jobdict['files_source_directory']
+        self.files_target_directory = jobdict['files_target_directory']
+        self.files_state_files_directory = jobdict['files_state_files_directory']
+        self.files_integrity_check = jobdict['files_integrity_check'] # TODO: Change to boolean
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
         self.scheduling_allow_recipient_modifications = jobdict['scheduling_allow_recipient_modifications']
@@ -136,27 +156,51 @@ class Job(Base):
         self.scheduling_loss_rate_threshold = int(jobdict['scheduling_loss_rate_threshold'])
         self.scheduling_request_acknowledgements = int(jobdict['scheduling_request_acknowledgements'])
         self.scheduling_atomicity = int(jobdict['scheduling_atomicity'])
-        self.scheduling_client_file_database_expire_time = int( jobdict['scheduling_client_file_database_expire_time'])
+        self.scheduling_client_file_database_expire_time = int(jobdict['scheduling_client_file_database_expire_time'])
+        self.recipients_file = jobdict['recipients_file']
+        self.system_is_complete = jobdict['system_is_complete']
+        self.system_nr_of_transmitted_bytes = int(jobdict['system_nr_of_transmitted_bytes'])
+        self.system_completion_percentage = float(jobdict['system_completion_percentage'])
+        self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'], "%Y-%m-%d %H:%M:%S")
+        self.system_transmissions_done = int(jobdict['system_transmissions_done'])
+        self.system_packet_naks_allowed = jobdict['system_packet_naks_allowed']
 
     def __repr__(self):
         return "<Job(" \
-               "channel_name='%s', " \
-               "accounting_customer='%s'," \
-               "scheduling_allow_recipient_modifications='%s', "\
-               "scheduling_start_time='%s'," \
-               "scheduling_priority='%u', "\
-               "scheduling_retransmission_interval='%u', "\
-               "scheduling_start_time_window='%u', "\
-               "scheduling_nr_of_transmissions='%u', "\
-               "scheduling_status_keep_time='%u', "\
+               "files_acknowledge_id = '%s'," \
+               "files_source_directory = '%s'," \
+               "files_target_directory = '%s'," \
+               "files_state_files_directory = '%s'," \
+               "files_integrity_check = '%s'," \
+               "channel_name = '%s', " \
+               "accounting_customer = '%s'," \
+               "scheduling_allow_recipient_modifications = '%s', "\
+               "scheduling_start_time = '%s'," \
+               "scheduling_priority = '%u', "\
+               "scheduling_retransmission_interval = '%u', "\
+               "scheduling_start_time_window = '%u', "\
+               "scheduling_nr_of_transmissions = '%u', "\
+               "scheduling_status_keep_time = '%u', "\
                "scheduling_expire_time = '%s'," \
-               "scheduling_retransmission_type='%s', " \
-               "scheduling_acknowledgement_interval='%u', "\
-               "scheduling_loss_rate_threshold='%u', "\
-               "scheduling_request_acknowledgements='%u', "\
-               "scheduling_atomicity='%u', "\
-               "scheduling_client_file_database_expire_time='%u' "\
-               "')>" % (self.channel_name,
+               "scheduling_retransmission_type = '%s', " \
+               "scheduling_acknowledgement_interval = '%u', "\
+               "scheduling_loss_rate_threshold = '%u', "\
+               "scheduling_request_acknowledgements = '%u', "\
+               "scheduling_atomicity = '%u', "\
+               "scheduling_client_file_database_expire_time = '%u', "\
+               "recipients_file = '%s'," \
+               "system_is_complete = '%s'," \
+               "system_nr_of_transmitted_bytes = '%u'," \
+               "system_completion_percentage = '%.2f'," \
+               "system_next_start_time = '%s'," \
+               "system_transmissions_done = '%u'," \
+               "system_packet_naks_allowed = '%s'," \
+               "')>" % (self.files_acknowledge_id,
+                        self.files_source_directory,
+                        self.files_target_directory,
+                        self.files_state_files_directory,
+                        self.files_integrity_check,
+                        self.channel_name,
                         self.accounting_customer,
                         self.scheduling_allow_recipient_modifications,
                         self.scheduling_start_time,
@@ -171,7 +215,14 @@ class Job(Base):
                         self.scheduling_loss_rate_threshold,
                         self.scheduling_request_acknowledgements,
                         self.scheduling_atomicity,
-                        self.scheduling_client_file_database_expire_time
+                        self.scheduling_client_file_database_expire_time,
+                        self.recipients_file,
+                        self.system_is_complete,
+                        self.system_nr_of_transmitted_bytes,
+                        self.system_completion_percentage,
+                        self.system_next_start_time,
+                        self.system_transmissions_done,
+                        self.system_packet_naks_allowed
                         )
 
 
