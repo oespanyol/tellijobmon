@@ -3,7 +3,7 @@
 import re
 import datetime
 # SQLAlchemy
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -110,7 +110,7 @@ class Job(Base):
     files_source_directory                      = Column(String  )
     files_target_directory                      = Column(String  )
     files_state_files_directory                 = Column(String  )
-    files_integrity_check                       = Column(String  )  # TODO: Change to boolean
+    files_integrity_check                       = Column(Boolean )
     channel_name                                = Column(String  )
     accounting_customer                         = Column(String  )
     scheduling_allow_recipient_modifications    = Column(String  )
@@ -128,19 +128,19 @@ class Job(Base):
     scheduling_atomicity                        = Column(Integer )
     scheduling_client_file_database_expire_time = Column(Integer )
     recipients_file                             = Column(String  )
-    system_is_complete                          = Column(String  )  # TODO: Change to boolean
+    system_is_complete                          = Column(Boolean )
     system_nr_of_transmitted_bytes              = Column(Integer )
-    system_completion_percentage                = Column(Float )
+    system_completion_percentage                = Column(Float   )
     system_next_start_time                      = Column(DateTime)
     system_transmissions_done                   = Column(Integer )
-    system_packet_naks_allowed                  = Column(String  )  # TODO: Change to boolean
+    system_packet_naks_allowed                  = Column(Boolean )
 
     def __init__(self, jobdict):
         self.files_acknowledge_id = jobdict['files_acknowledge_id']
         self.files_source_directory = jobdict['files_source_directory']
         self.files_target_directory = jobdict['files_target_directory']
         self.files_state_files_directory = jobdict['files_state_files_directory']
-        self.files_integrity_check = jobdict['files_integrity_check'] # TODO: Change to boolean
+        self.files_integrity_check = str2bool(jobdict['files_integrity_check'])
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
         self.scheduling_allow_recipient_modifications = jobdict['scheduling_allow_recipient_modifications']
@@ -158,12 +158,12 @@ class Job(Base):
         self.scheduling_atomicity = int(jobdict['scheduling_atomicity'])
         self.scheduling_client_file_database_expire_time = int(jobdict['scheduling_client_file_database_expire_time'])
         self.recipients_file = jobdict['recipients_file']
-        self.system_is_complete = jobdict['system_is_complete']
+        self.system_is_complete = str2bool(jobdict['system_is_complete'])
         self.system_nr_of_transmitted_bytes = int(jobdict['system_nr_of_transmitted_bytes'])
         self.system_completion_percentage = float(jobdict['system_completion_percentage'])
         self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'], "%Y-%m-%d %H:%M:%S")
         self.system_transmissions_done = int(jobdict['system_transmissions_done'])
-        self.system_packet_naks_allowed = jobdict['system_packet_naks_allowed']
+        self.system_packet_naks_allowed = str2bool(jobdict['system_packet_naks_allowed'])
 
     def __repr__(self):
         return "<Job(" \
@@ -225,6 +225,10 @@ class Job(Base):
                         self.system_packet_naks_allowed
                         )
 
+
+def str2bool(v):
+    # TODO : handle the 'False' cases and return error if not found
+    return v.lower() in ("yes", "true", "t", "1")
 
 class _InitPersist:
     """
