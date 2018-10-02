@@ -2,10 +2,12 @@
 
 import re
 # SQLAlchemy
-from sqlalchemy import Column, Integer, String, Boolean, Date
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import time
+import datetime
 
 __author__    = "Oriol Espanyol"
 __copyright__ = "Copyright 2018, EUMETCast Terrestrial Pathfinder-II"
@@ -101,59 +103,59 @@ class Job(Base):
     __tablename__ = 'jobs'
 
     id = Column(Integer, primary_key=True)
-    channel_name                                = Column(String )
-    accounting_customer                         = Column(String )
-    scheduling_allow_recipient_modifications    = Column(String)
-    scheduling_start_time                       = Column(String   ) #2018-09-24 07:07:26
-    scheduling_priority                         = Column(Integer)
-    scheduling_retransmission_interval          = Column(Integer)
-    scheduling_start_time_window                = Column(Integer)
-    scheduling_nr_of_transmissions              = Column(Integer)
-    scheduling_status_keep_time                 = Column(Integer)
-    scheduling_expire_time                      = Column(String   ) #2018-09-24 07:08:29
-    scheduling_retransmission_type              = Column(String )
-    scheduling_acknowledgement_interval         = Column(Integer)
-    scheduling_loss_rate_threshold              = Column(Integer)
-    scheduling_request_acknowledgements         = Column(Integer)
-    scheduling_atomicity                        = Column(Integer)
-    scheduling_client_file_database_expire_time = Column(String   ) #2018-09-24 07:08:29
+    channel_name                                = Column(String  )
+    accounting_customer                         = Column(String  )
+    scheduling_allow_recipient_modifications    = Column(String  )
+    scheduling_start_time                       = Column(DateTime)
+    scheduling_priority                         = Column(Integer )
+    scheduling_retransmission_interval          = Column(Integer )
+    scheduling_start_time_window                = Column(Integer )
+    scheduling_nr_of_transmissions              = Column(Integer )
+    scheduling_status_keep_time                 = Column(Integer )
+    scheduling_expire_time                      = Column(DateTime)
+    scheduling_retransmission_type              = Column(String  )
+    scheduling_acknowledgement_interval         = Column(Integer )
+    scheduling_loss_rate_threshold              = Column(Integer )
+    scheduling_request_acknowledgements         = Column(Integer )
+    scheduling_atomicity                        = Column(Integer )
+    scheduling_client_file_database_expire_time = Column(Integer )
 
     def __init__(self, jobdict):
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
         self.scheduling_allow_recipient_modifications = jobdict['scheduling_allow_recipient_modifications']
-        self.scheduling_start_time = jobdict['scheduling_start_time'] #Column(Date)  # 2018-09-24 07:07:26
+        self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'], "%Y-%m-%d %H:%M:%S")
         self.scheduling_priority = int(jobdict['scheduling_priority'])
         self.scheduling_retransmission_interval = int(jobdict['scheduling_retransmission_interval'])
         self.scheduling_start_time_window = int(jobdict['scheduling_start_time_window'])
         self.scheduling_nr_of_transmissions = int(jobdict['scheduling_nr_of_transmissions'])
         self.scheduling_status_keep_time = int(jobdict['scheduling_status_keep_time'])
-        self.scheduling_expire_time = jobdict['scheduling_expire_time'] #Column(Date)  # 2018-09-24 07:08:29
+        self.scheduling_expire_time = datetime.datetime.strptime(jobdict['scheduling_expire_time'], "%Y-%m-%d %H:%M:%S")
         self.scheduling_retransmission_type = jobdict['scheduling_retransmission_type']
         self.scheduling_acknowledgement_interval = int(jobdict['scheduling_acknowledgement_interval'])
         self.scheduling_loss_rate_threshold = int(jobdict['scheduling_loss_rate_threshold'])
         self.scheduling_request_acknowledgements = int(jobdict['scheduling_request_acknowledgements'])
         self.scheduling_atomicity = int(jobdict['scheduling_atomicity'])
-        self.scheduling_client_file_database_expire_time = jobdict['scheduling_client_file_database_expire_time'] #Column(Date)
+        self.scheduling_client_file_database_expire_time = int( jobdict['scheduling_client_file_database_expire_time'])
 
     def __repr__(self):
         return "<Job(" \
                "channel_name='%s', " \
-               "accounting_customer='%s," \
+               "accounting_customer='%s'," \
                "scheduling_allow_recipient_modifications='%s', "\
-               "scheduling_start_time='%s," \
+               "scheduling_start_time='%s'," \
                "scheduling_priority='%u', "\
                "scheduling_retransmission_interval='%u', "\
                "scheduling_start_time_window='%u', "\
                "scheduling_nr_of_transmissions='%u', "\
                "scheduling_status_keep_time='%u', "\
-               "scheduling_expire_time = '%s," \
+               "scheduling_expire_time = '%s'," \
                "scheduling_retransmission_type='%s', " \
                "scheduling_acknowledgement_interval='%u', "\
                "scheduling_loss_rate_threshold='%u', "\
                "scheduling_request_acknowledgements='%u', "\
                "scheduling_atomicity='%u', "\
-               "scheduling_client_file_database_expire_time='%s' "\
+               "scheduling_client_file_database_expire_time='%u' "\
                "')>" % (self.channel_name,
                         self.accounting_customer,
                         self.scheduling_allow_recipient_modifications,
