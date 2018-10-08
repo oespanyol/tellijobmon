@@ -59,22 +59,36 @@ def parse(pfilepath):
                     # Prepend the name of the section
                     section_line = prefix + '_' + line
                     # Split line on "=" separator to generate the key value pair
-                    print(section_line)
                     job_kvp = section_line.split("=", 2)
                     job_dict[job_kvp[0]] = job_kvp[1]
 
-        print(job_dict)
         session = _InitPersist().session
 
         job = Job(job_dict)
 
         session.add(job)
-        my_job = session.query(Job).filter_by(channel_name='T01-EPS-A-11').first()
-        print(my_job)
+        myjob = session.query(Job).filter_by(channel_name='T01-EPS-A-11').first()
+        print(myjob)
 
-#        for filel in reg_match.filel:
-#            filel_content = filel.group('filel_content')
-#            print(filel_content)
+        for filel in reg_match.filel:
+            filel_lines = filel.group('filel_content')
+
+            # Instantiate a the file dictionary to keep all the keys and values
+            # and add the job id as link to jobs table
+            filel_dict = {'files_acknowledge_id': job.files_acknowledge_id}
+            # Iterate through the list of contents to prepend the name of the section
+            for line in filel_lines.splitlines():
+                if line.strip():
+                    # Split line on "=" separator to generate the key value pair
+                    filel_kvp = line.split("=", 2)
+                    filel_dict[filel_kvp[0]] = filel_kvp[1]
+
+            afile = File(filel_dict)
+            session.add(afile)
+
+        myfile = session.query(File).filter_by(file_id='5ba88d2e0012de5a').first()
+        print(myfile)
+
     return text
 
 
@@ -106,15 +120,15 @@ class _RegExLib:
 
 class Job(Base):
     __tablename__ = 'jobs'
-    files_acknowledge_id = Column(String, primary_key=True)
+    files_acknowledge_id                        = Column(String, primary_key=True)
     files_source_directory                      = Column(String  )
     files_target_directory                      = Column(String  )
     files_state_files_directory                 = Column(String  )
-    files_integrity_check                       = Column(Boolean )
+    files_integrity_check                       = Column(Boolean, unique=False, default=False)
     channel_name                                = Column(String  )
     accounting_customer                         = Column(String  )
     scheduling_allow_recipient_modifications    = Column(String  )
-    scheduling_start_time                       = Column(Boolean )
+    scheduling_start_time                       = Column(DateTime)
     scheduling_priority                         = Column(Integer )
     scheduling_retransmission_interval          = Column(Integer )
     scheduling_start_time_window                = Column(Integer )
@@ -128,12 +142,12 @@ class Job(Base):
     scheduling_atomicity                        = Column(Integer )
     scheduling_client_file_database_expire_time = Column(Integer )
     recipients_file                             = Column(String  )
-    system_is_complete                          = Column(Boolean )
+    system_is_complete                          = Column(Boolean, unique=False, default=True)
     system_nr_of_transmitted_bytes              = Column(Integer )
     system_completion_percentage                = Column(Float   )
     system_next_start_time                      = Column(DateTime)
     system_transmissions_done                   = Column(Integer )
-    system_packet_naks_allowed                  = Column(Boolean )
+    system_packet_naks_allowed                  = Column(Boolean, unique=False, default=False)
 
     def __init__(self, jobdict):
         self.files_acknowledge_id = jobdict['files_acknowledge_id']
@@ -223,6 +237,69 @@ class Job(Base):
                         self.system_next_start_time,
                         self.system_transmissions_done,
                         self.system_packet_naks_allowed
+                        )
+
+
+class File(Base):
+    __tablename__ = 'files'
+    id                   = Column(Integer, primary_key=True, autoincrement=True)
+    file_id              = Column(String)
+    files_acknowledge_id = Column(String)
+    done                 = Column(Boolean, unique=False, default=False)
+    type                 = Column(Integer)
+    relay_file           = Column(Boolean, unique=False, default=False)
+    path                 = Column(String)
+    target_path          = Column(String)
+    state_file           = Column(String)
+    size                 = Column(Integer)
+    sent_fragment        = Column(String)
+    time_stamp           = Column(DateTime)
+    last_send_time_stamp = Column(DateTime)
+
+    def __init__(self, filedict):
+        self.file_id              = filedict['id']
+        self.files_acknowledge_id = filedict['files_acknowledge_id']
+        self.done                 = str2bool(filedict['done'])
+        self.type                 = int(filedict['type'])
+        self.relay_file           = str2bool(filedict['relay_file'])
+        self.path                 = filedict['path']
+        self.target_path          = filedict['target_path']
+        if 'state_file' in filedict:
+            self.state_file       = filedict['state_file']
+        self.size                 = int(filedict['size'])
+        self.sent_fragment        = filedict['sent_fragment']
+        self.time_stamp           = datetime.datetime.strptime(filedict['time_stamp'][:26], "%Y-%m-%d %H:%M:%S.%f")
+        if 'last_send_time_stamp' in filedict:
+            self.last_send_time_stamp = datetime.datetime.strptime(filedict['last_send_time_stamp'][:26], "%Y-%m-%d %H:%M:%S.%f")
+
+    def __repr__(self):
+        return "<File(" \
+               "id = '%s'," \
+               "file_id = '%s'," \
+               "files_acknowledge_id = '%s'," \
+               "done = '%s'," \
+               "type = '%u'," \
+               "relay_file = '%s'," \
+               "path = '%s', " \
+               "target_path = '%s'," \
+               "state_file = '%s'," \
+               "size = '%u', "\
+               "sent_fragment = '%s'," \
+               "time_stamp = '%s'," \
+               "last_send_time_stamp = '%s'," \
+               "')>" % (self.id,
+                        self.file_id,
+                        self.files_acknowledge_id,
+                        self.done,
+                        self.type,
+                        self.relay_file,
+                        self.path,
+                        self.target_path,
+                        self.state_file,
+                        self.size,
+                        self.sent_fragment,
+                        self.time_stamp,
+                        self.last_send_time_stamp
                         )
 
 
