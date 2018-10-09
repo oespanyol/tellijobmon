@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+import os
 import re
 import datetime
 # SQLAlchemy
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -19,7 +20,20 @@ __status__    = "Development"
 Base = declarative_base()
 
 
-def parse(pfilepath):
+def get_files_in_dir(dirpath, ending):
+
+    files = []
+    for filename in os.listdir(dirpath):
+        if filename.endswith(ending):
+            files.append(os.path.join(dirpath, filename))
+            continue
+        else:
+            continue
+
+    return files
+
+
+def parse_job(pfilepath):
     """
     Parse text at given filepath
 
@@ -28,15 +42,12 @@ def parse(pfilepath):
     Returns : TODO
 
     """
-
-    with open(pfilepath, 'r') as pfile:
-        text = pfile.read()
-        pfile.close()
+    with open(pfilepath, 'r') as jfile:
+        text = jfile.read()
+        jfile.close()
 
         reg_match = _RegExLib(text)
 
-        # TODO: Can be streamlined to match for the names of the sections and iterate
-        #       Code is compacter and more extandable but, it might be less readable
         channel_content     = ['channel',     reg_match.channel     .group('channel'    )]
         accounting_content  = ['accounting',  reg_match.accounting  .group('accounting' )]
         scheduling_content  = ['scheduling',  reg_match.scheduling  .group('scheduling' )]
@@ -47,7 +58,6 @@ def parse(pfilepath):
         unconfirmed_content = ['unconfirmed', reg_match.unconfirmed .group('unconfirmed')]
         complete_content    = ['complete',    reg_match.complete    .group('complete'   )]
         received_content    = ['received',    reg_match.received    .group('received'   )]
-
 
         # Put all contents together in one list
         job_contents = [channel_content, accounting_content, scheduling_content,
@@ -88,7 +98,7 @@ def parse(pfilepath):
                     # Split line on "=" separator to generate the key value pair
                     filel_kvp = line.split("=", 2)
                     filel_dict[filel_kvp[0]] = filel_kvp[1]
-                    # TODO: Handle duplicates, like in [files] file=
+                    # TODO: Consider handling duplicates, like in [files] file=
 
             afile = File(filel_dict)
             session.add(afile)
@@ -96,51 +106,43 @@ def parse(pfilepath):
 #        myfile = session.query(File).filter_by(file_id='5ba88d2e0012de5a').first()
 #        print(myfile)
 
-        # Iterate through the lists that contain recipients information, parse, compile and persist it into a table
-        received_dict = {}
-
         # Put all contents together in one list
         recipient_contents = [ip_content, unconfirmed_content, complete_content, received_content]
 
         # Instantiate a recipient dictionary to keep all the keys and values
         recipient_dict = {}
         # Iterate through the list of contents to prepend the name of the section
-        # TODO: To complex -> simplify
         for content in recipient_contents:
             prefix = content[0]
             lines = content[1]
             for line in lines.splitlines():
                 if line.strip():
                     recipient_kvp = line.split("=", 2)
-                    print(recipient_kvp)
+                    # Assign key and value depending on the type of content
                     if recipient_kvp[0] == 'name':
-                        # Create one entry if it doesn't exist yet
                         key = recipient_kvp[1]
-                        if key not in recipient_dict:
-                            recipient = {prefix: 'True'}
-                            recipient_dict[key] = recipient
-
-                        # If it already exists, get instance and fill details of existing entry
-                        if key in recipient_dict:
-                            recipient = recipient_dict[key]
-                            recipient[prefix] = 'True'
-                            recipient_dict[key] = recipient
-
-                    if recipient_kvp[0] != 'name':
-                        # Create one entry if it doesn't exist yet
+                        value = 'True'
+                    else:
                         key = recipient_kvp[0]
                         value = recipient_kvp[1]
-                        if key not in recipient_dict:
-                            recipient = {prefix: value}
-                            recipient_dict[key] = recipient
 
-                        # If it already exists, get instance and fill details of existing entry
-                        if key in recipient_dict:
-                            recipient = recipient_dict[key]
-                            recipient[prefix] = value
-                            recipient_dict[key] = recipient
+                    # Create new entry or if it already exists, get instance and fill details of existing entry
+                    if key in recipient_dict:
+                        rec = recipient_dict[key]
+                        rec[prefix] = value
+                        recipient_dict[key] = rec
+                    else:
+                        rec = {prefix: value,
+                               'name': key,
+                               'files_acknowledge_id': job.files_acknowledge_id}
+                        recipient_dict[key] = rec
 
-        print(recipient_dict)
+        for key, values in recipient_dict.items():
+            arecipient = Recipient(values)
+            session.add(arecipient)
+
+#        myrecipient = session.query(Recipient).order_by(desc(Recipient.id)).first()
+#        print(myrecipient)
 
     return text
 
@@ -382,33 +384,39 @@ class Recipient(Base):
     files_acknowledge_id = Column(String)
     unconfirmed          = Column(Boolean, unique=False, default=False)
     complete             = Column(Boolean, unique=False, default=False)
-    received_percentage  = Column(Float)
+    received             = Column(Float)
 
     def __init__(self, recipientdict):
+        # Mandatory fields
         self.name                 = recipientdict['name']
-        self.ip                   = recipientdict['ip']
         self.files_acknowledge_id = recipientdict['files_acknowledge_id']
-        self.unconfirmed          = str2bool(recipientdict['unconfirmed'])
-        self.complete             = str2bool(recipientdict['complete'])
-        self.received_percentage  = float(recipientdict['received_percentage'])
+        # Optional fields
+        if 'ip' in recipientdict:
+            self.ip                   = recipientdict['ip']
+        if 'unconfirmed' in recipientdict:
+            self.unconfirmed          = str2bool(recipientdict['unconfirmed'])
+        if 'complete' in recipientdict:
+            self.complete             = str2bool(recipientdict['complete'])
+        if 'received' in recipientdict:
+            self.received             = float(recipientdict['received'])
 
     def __repr__(self):
         return "<Recipient(" \
-               "id = '%s'," \
-               "name = '%s'," \
-               "ip = '%s'," \
-               "files_acknowledge_id = '%u', "\
-               "unconfirmed = '%s'," \
-               "complete = '%s'," \
-               "received_percentage = '%.6f'," \
-               "')>" % (self.id,
-                        self.name,
-                        self.ip,
-                        self.files_acknowledge_id,
-                        self.unconfirmed,
-                        self.complete,
-                        self.received_percentage
-                        )
+               "id='%s', " \
+               "name='%s', " \
+               "ip='%s', " \
+               "files_acknowledge_id='%s', "\
+               "unconfirmed='%s', " \
+               "complete='%s', " \
+               "received='%.6f'" \
+               ")>" % (self.id,
+                       self.name,
+                       self.ip,
+                       self.files_acknowledge_id,
+                       self.unconfirmed,
+                       self.complete,
+                       self.received
+                       )
 
 
 def str2bool(v):
@@ -420,7 +428,7 @@ class _InitPersist:
     """
      Initiates the Persistence with SQLAlchemy
     """
-    _engine = create_engine('sqlite:///:memory:', echo=False)
+    _engine = create_engine('sqlite:////home/espanyol/workspace/tellijobsparser/db/tellijobsparser.db', echo=False)
     Base.metadata.drop_all(_engine)
     Base.metadata.create_all(_engine)
     _Session = sessionmaker(bind=_engine)
@@ -430,5 +438,10 @@ class _InitPersist:
 
 
 if __name__ == '__main__':
-    filepath = 'sample.job'
-    data = parse(filepath)
+
+    jobs_path = '/home/espanyol/workspace/tellijobsparser/jobs'
+    jobs_sufix = '.job'
+    job_paths = get_files_in_dir(jobs_path, jobs_sufix)
+
+    for job_path in job_paths:
+        data = parse_job(job_path)
