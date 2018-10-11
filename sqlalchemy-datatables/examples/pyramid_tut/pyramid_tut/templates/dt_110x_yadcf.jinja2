@@ -1,0 +1,63 @@
+{% include 'base.jinja2' %}
+
+{% block content %}
+  <div class="row-fluid">
+    <div class="col-lg-12">
+      <h2>DataTables 1.10.x example: Users and their address, with the <a href='https://github.com/vedmack/yadcf' >yadcf</a> plugin</h2>
+      <table id="dt_110x" class="table table-striped" cellspacing="0" width="100%">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Birthday</th>
+            <th>Age</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_javascripts %}
+ 
+  <script src="https://tdamsma.github.io/datatables-yadcf-bootstrap-webpack/bundle-yadcf.js"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+      var table = $('#dt_110x').DataTable({
+        "processing": false,
+        "serverSide": true,
+        "ajax": "{{ request.route_path('data_yadcf') }}"
+      });
+
+      yadcf.init(table, [{
+        column_number: 0,
+        filter_type: "range_number"
+      }, {
+        column_number: 1,
+        filter_type: "multi_select",
+        select_type: "chosen"
+      }, {
+        column_number: 2,
+        filter_type: "auto_complete"
+      }, {
+        column_number: 3,
+        filter_type: "range_date",
+        date_format: "yyyy-mm-dd",
+        moment_date_format: "YYYY-MM-DD",
+        datepicker_type: 'bootstrap-datetimepicker',
+        filter_plugin_options: {
+          showTodayButton: true,
+          showClear: true,
+          format: "YYYY-MM-DD"
+        }
+      }, {
+        column_number: 4,
+        filter_type: "range_number_slider"
+      }]);
+    });
+  </script>
+
+{% endblock %}
