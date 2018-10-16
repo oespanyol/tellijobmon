@@ -61,7 +61,10 @@ class Address(Base):
 
 class Job(Base):
     __tablename__ = 'jobs'
-    files_acknowledge_id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    files_acknowledge_id = Column(String)
+    files = relationship('File', backref=backref('Job'))
+    recipients = relationship('Recipient', backref=backref('File'))
     files_source_directory = Column(String)
     files_target_directory = Column(String)
     files_state_files_directory = Column(String)
@@ -127,6 +130,7 @@ class Job(Base):
 
     def __repr__(self):
         return "<Job(" \
+               "id = '%s'," \
                "files_acknowledge_id = '%s'," \
                "files_source_directory = '%s'," \
                "files_target_directory = '%s'," \
@@ -155,7 +159,8 @@ class Job(Base):
                "system_next_start_time = '%s'," \
                "system_transmissions_done = '%u'," \
                "system_packet_naks_allowed = '%s'," \
-               "')>" % (self.files_acknowledge_id,
+               "')>" % (self.id,
+                        self.files_acknowledge_id,
                         self.files_source_directory,
                         self.files_target_directory,
                         self.files_state_files_directory,
@@ -264,7 +269,7 @@ class Recipient(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
     ip = Column(String)
-    files_acknowledge_id = Column(String)
+    files_acknowledge_id = Column(String, ForeignKey('jobs.files_acknowledge_id'))
     unconfirmed = Column(Boolean, unique=False, default=False)
     complete = Column(Boolean, unique=False, default=False)
     received = Column(Float)

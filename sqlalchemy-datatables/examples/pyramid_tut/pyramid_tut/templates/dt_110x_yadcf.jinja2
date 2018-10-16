@@ -34,16 +34,20 @@
 
       yadcf.init(table, [{
         column_number: 0,
-        filter_type: "range_number"
-      }, {
-        column_number: 1,
         filter_type: "multi_select",
         select_type: "chosen"
       }, {
-        column_number: 2,
+        column_number: 1,
         filter_type: "auto_complete"
       }, {
+        column_number: 2,
+        filter_type: "range_number"
+      }, {
         column_number: 3,
+        filter_type: "multi_select",
+        select_type: "chosen"
+      }, {
+        column_number: 4,
         filter_type: "range_date",
         date_format: "yyyy-mm-dd",
         moment_date_format: "YYYY-MM-DD",
@@ -53,9 +57,6 @@
           showClear: true,
           format: "YYYY-MM-DD"
         }
-      }, {
-        column_number: 4,
-        filter_type: "range_number_slider"
       }]);
     });
   </script>

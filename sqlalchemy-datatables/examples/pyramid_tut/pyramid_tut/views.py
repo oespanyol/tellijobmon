@@ -5,14 +5,14 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy import func
 from datatables import ColumnDT, DataTables
 
-from .models import Address, DBSession, User, Job
+from .models import DBSession, Job, File, Recipient
 
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
 def home(request):
     """Try to connect to database, and list available examples."""
     try:
-        DBSession.query(User).first()
+        DBSession.query(Job).first()
     except DBAPIError:
         return Response(
             conn_err_msg, content_type='text/plain', status_int=500)
@@ -61,21 +61,24 @@ def data(request):
     #    will search a date formatted equal to how it is presented
     #    in the table
     columns = [
-        ColumnDT(Job.files_acknowledge_id),
+        #ColumnDT(Job.files_acknowledge_id),
         ColumnDT(Job.channel_name),
-        ColumnDT(Job.system_nr_of_transmitted_bytes),
-        ColumnDT(Job.scheduling_loss_rate_threshold),
-        ColumnDT(Job.scheduling_priority)
+        #ColumnDT(Job.scheduling_priority),
+        #ColumnDT(Job.scheduling_start_time),
+        #ColumnDT(Job.system_nr_of_transmitted_bytes)
+        ColumnDT(File.target_path),
+        ColumnDT(File.size),
+        ColumnDT(File.time_stamp),
+        ColumnDT(Recipient.name)
+        #ColumnDT(Recipient.received)
     ]
 
     # defining the initial query depending on your purpose
     #  - don't include any columns
     #  - if you need a join, also include a 'select_from'
-#    query = DBSession.query().\
-#            select_from(User).\
-#        join(Address).\
-#        filter(Address.id > 4)
-    query = DBSession.query().select_from(Job)
+    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
+#        .filter(Address.id > 4)
+#    query = DBSession.query().select_from(Job)
 
     # instantiating a DataTable for the query and table needed
     row_table = DataTables(request.GET, query, columns)
@@ -89,19 +92,18 @@ def data_advanced(request):
     """Return server side data."""
     # defining columns
     columns = [
-        ColumnDT(Job.scheduling_priority, search_method='numeric'),
+        #ColumnDT(Job.scheduling_priority, search_method='numeric'),
         ColumnDT(Job.channel_name),
-        ColumnDT(Job.accounting_customer),
-        ColumnDT(Job.system_next_start_time, search_method='date'),
-        ColumnDT(Job.scheduling_loss_rate_threshold, search_method='numeric')
+        ColumnDT(File.target_path),
+        ColumnDT(File.size, search_method='numeric'),
+        #ColumnDT(Job.accounting_customer),
+        ColumnDT(File.time_stamp, search_method='date'),
+        ColumnDT(Recipient.name)
+        #ColumnDT(Recipient.received, search_method='numeric')
     ]
 
     # defining the initial query depending on your purpose
-    #    query = DBSession.query().\
-    #            select_from(User).\
-    #        join(Address).\
-    #        filter(Address.id > 4)
-    query = DBSession.query().select_from(Job)
+    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
 
     # instantiating a DataTable for the query and table needed
     row_table = DataTables(request.GET, query, columns)
@@ -115,11 +117,12 @@ def data_yadcf(request):
     """Return server side data."""
     # defining columns
     columns = [
-        ColumnDT(Job.scheduling_priority, search_method='yadcf_range_number'),
         ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
-        ColumnDT(Job.accounting_customer, search_method='yadcf_autocomplete'),
-        ColumnDT(Job.system_next_start_time, search_method='yadcf_range_date'),
-        ColumnDT(Job.scheduling_loss_rate_threshold, search_method='yadcf_range_number_slider')
+        ColumnDT(File.target_path, search_method='yadcf_autocomplete'),
+        ColumnDT(File.size, search_method='yadcf_range_number'),
+        ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
+        #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
+        ColumnDT(Job.system_next_start_time, search_method='yadcf_range_date')
     ]
 
     # defining the initial query depending on your purpose
@@ -128,7 +131,7 @@ def data_yadcf(request):
     #            select_from(User).\
     #        join(Address).\
     #        filter(Address.id > 4)
-    query = DBSession.query().select_from(Job)
+    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
 
     # instantiating a DataTable for the query and table needed
     row_table = DataTables(request.GET, query, columns)

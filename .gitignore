@@ -1,0 +1,6 @@
+.idea/
+jobs
+db/
+*.job
+*.pyc
+*/.gitignore
