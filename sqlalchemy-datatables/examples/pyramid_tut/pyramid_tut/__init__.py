@@ -26,12 +26,11 @@ def main(global_config, **settings):
     config.add_route('data_yadcf', '/data_yadcf')
     config.add_route('dt_110x', '/dt_110x')
     config.add_route('dt_110x_custom_column', '/dt_110x_custom_column')
-    config.add_route('dt_110x_basic_column_search',
-                     '/dt_110x_basic_column_search')
-    config.add_route('dt_110x_advanced_column_search',
-                     '/dt_110x_advanced_column_search')
-    config.add_route('dt_110x_yadcf',
-                     '/dt_110x_yadcf')
+    config.add_route('dt_110x_basic_column_search', '/dt_110x_basic_column_search')
+    config.add_route('dt_110x_advanced_column_search', '/dt_110x_advanced_column_search')
+    config.add_route('dt_110x_yadcf', '/dt_110x_yadcf')
+    config.add_route('show_job', '/show_job')
+    config.add_route('job', '/job')
     config.scan()
 
     # only for advanced example

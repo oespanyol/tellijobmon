@@ -2,8 +2,8 @@
 from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.exc import DBAPIError
-from sqlalchemy import func
 from datatables import ColumnDT, DataTables
+import json
 
 from .models import DBSession, Job, File, Recipient
 
@@ -33,7 +33,7 @@ def dt_110x_custom_column(request):
 
 
 @view_config(route_name='dt_110x_basic_column_search',
-             renderer='templates/dt_110x_basic_column_search.jinja2')
+             renderer='templates/show_job.jinja2')
 def dt_110x_basic_column_search(request):
     """Text based per column search"""
     return {'project': 'dt_110x_basic_column_search'}
@@ -53,6 +53,33 @@ def dt_110x_yadcf(request):
     return {'project': 'dt_110x_yadcf'}
 
 
+@view_config(route_name='show_job',
+             request_method='GET',
+             request_param="acknowledge_id",
+             renderer='templates/show_job.jinja2')
+def show_job(request):
+    """Display a job"""
+    return {'project': 'show_job'}
+
+
+@view_config(route_name='job', renderer='json')
+def job(request):
+    json_object = {"recordsTotal": "2", "recordsFiltered": "2", "draw": "1", "data": [
+        {"1": "A value", "0": "This is a parameter"},
+        {"1": "Another value", "0": "this is another one"}]}
+
+    query = DBSession.query(Job).all()
+#    print(query)
+#    for q in query:
+#        dict_q = dict(q)
+#        print(dict_q)
+
+    #test = json.dumps([dict(q) for q in query])
+    #print(test)
+
+    return json_object
+
+
 @view_config(route_name='data', renderer='json')
 def data(request):
     """Return server side data."""
@@ -61,14 +88,14 @@ def data(request):
     #    will search a date formatted equal to how it is presented
     #    in the table
     columns = [
-        #ColumnDT(Job.files_acknowledge_id),
+        ColumnDT(Job.files_acknowledge_id),
         ColumnDT(Job.channel_name),
         #ColumnDT(Job.scheduling_priority),
         #ColumnDT(Job.scheduling_start_time),
         #ColumnDT(Job.system_nr_of_transmitted_bytes)
         ColumnDT(File.target_path),
         ColumnDT(File.size),
-        ColumnDT(File.time_stamp),
+        #ColumnDT(File.time_stamp),
         ColumnDT(Recipient.name)
         #ColumnDT(Recipient.received)
     ]
@@ -93,6 +120,7 @@ def data_advanced(request):
     # defining columns
     columns = [
         #ColumnDT(Job.scheduling_priority, search_method='numeric'),
+        ColumnDT(Job.id),
         ColumnDT(Job.channel_name),
         ColumnDT(File.target_path),
         ColumnDT(File.size, search_method='numeric'),
@@ -117,12 +145,13 @@ def data_yadcf(request):
     """Return server side data."""
     # defining columns
     columns = [
+        ColumnDT(Job.files_acknowledge_id),
         ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
         ColumnDT(File.target_path, search_method='yadcf_autocomplete'),
         ColumnDT(File.size, search_method='yadcf_range_number'),
         ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
         #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
-        ColumnDT(Job.system_next_start_time, search_method='yadcf_range_date')
+        ColumnDT(File.time_stamp, search_method='yadcf_range_date')
     ]
 
     # defining the initial query depending on your purpose
