@@ -6,9 +6,9 @@ import datetime
 
 from sqlalchemy import Column, Date, ForeignKey, Integer, Unicode, func, String, Boolean, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (backref, column_property, relationship,
-                            scoped_session, sessionmaker)
+from sqlalchemy.orm import (backref, column_property, relationship, scoped_session, sessionmaker)
 from zope.sqlalchemy import ZopeTransactionExtension
+import json
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
@@ -59,7 +59,7 @@ class Address(Base):
         return '<%s#%s>' % (self.__class__.__name__, self.id)
 
 
-class Job(Base):
+class Job(Base, json.JSONEncoder):
     __tablename__ = 'jobs'
     id = Column(Integer, primary_key=True, autoincrement=True)
     files_acknowledge_id = Column(String)
@@ -101,10 +101,8 @@ class Job(Base):
         self.files_integrity_check = str2bool(jobdict['files_integrity_check'])
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
-        self.scheduling_allow_recipient_modifications = str2bool(
-            jobdict['scheduling_allow_recipient_modifications'])
-        self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'],
-                                                                "%Y-%m-%d %H:%M:%S")
+        self.scheduling_allow_recipient_modifications = str2bool(jobdict['scheduling_allow_recipient_modifications'])
+        self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'],"%Y-%m-%d %H:%M:%S")
         self.scheduling_priority = int(jobdict['scheduling_priority'])
         self.scheduling_retransmission_interval = int(jobdict['scheduling_retransmission_interval'])
         self.scheduling_start_time_window = int(jobdict['scheduling_start_time_window'])
@@ -117,16 +115,35 @@ class Job(Base):
         self.scheduling_loss_rate_threshold = int(jobdict['scheduling_loss_rate_threshold'])
         self.scheduling_request_acknowledgements = int(jobdict['scheduling_request_acknowledgements'])
         self.scheduling_atomicity = int(jobdict['scheduling_atomicity'])
-        self.scheduling_client_file_database_expire_time = int(
-            jobdict['scheduling_client_file_database_expire_time'])
+        self.scheduling_client_file_database_expire_time = int(jobdict['scheduling_client_file_database_expire_time'])
         self.recipients_file = jobdict['recipients_file']
         self.system_is_complete = str2bool(jobdict['system_is_complete'])
         self.system_nr_of_transmitted_bytes = int(jobdict['system_nr_of_transmitted_bytes'])
         self.system_completion_percentage = float(jobdict['system_completion_percentage'])
-        self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'],
-                                                                 "%Y-%m-%d %H:%M:%S")
+        self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'],"%Y-%m-%d %H:%M:%S")
         self.system_transmissions_done = int(jobdict['system_transmissions_done'])
         self.system_packet_naks_allowed = str2bool(jobdict['system_packet_naks_allowed'])
+
+    def to_json_table(self):
+
+        job_copy = self.__dict__.copy()
+        # Remove entry corresponding to SQLAlchemy: _sa_instance_state
+        job_copy.pop('_sa_instance_state', None)
+
+        output = {}
+        job_data = []
+        for key, value in job_copy.iteritems():
+            columns = {}
+            columns['0'] = str(key)
+            columns['1'] = str(value)
+            job_data.append(columns)
+
+        output['draw'] = str(int("1"))
+        output['recordsTotal'] = str(len(job_copy))
+        output['recordsFiltered'] = str(len(job_copy))
+        output['data'] = job_data
+
+        return output
 
     def __repr__(self):
         return "<Job(" \
@@ -310,3 +327,13 @@ class Recipient(Base):
 def str2bool(v):
     # TODO : handle the 'False' cases and return error if not found
     return v.lower() in ("yes", "true", "t", "1")
+
+
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+
+    return obj.__dict__

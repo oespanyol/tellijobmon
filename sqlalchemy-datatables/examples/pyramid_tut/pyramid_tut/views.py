@@ -3,10 +3,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.exc import DBAPIError
 from datatables import ColumnDT, DataTables
-import json
-
 from .models import DBSession, Job, File, Recipient
-
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
 def home(request):
@@ -64,20 +61,10 @@ def show_job(request):
 
 @view_config(route_name='job', renderer='json')
 def job(request):
-    json_object = {"recordsTotal": "2", "recordsFiltered": "2", "draw": "1", "data": [
-        {"1": "A value", "0": "This is a parameter"},
-        {"1": "Another value", "0": "this is another one"}]}
 
-    query = DBSession.query(Job).all()
-#    print(query)
-#    for q in query:
-#        dict_q = dict(q)
-#        print(dict_q)
-
-    #test = json.dumps([dict(q) for q in query])
-    #print(test)
-
-    return json_object
+    a_job = DBSession.query(Job).first()
+    some_data = a_job.to_json_table()
+    return some_data
 
 
 @view_config(route_name='data', renderer='json')
