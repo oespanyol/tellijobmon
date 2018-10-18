@@ -50,6 +50,13 @@ def all_recipients(request):
     return {'project': 'recipients'}
 
 
+@view_config(route_name='jobs',
+             renderer='templates/jobs.jinja2')
+def all_jobs(request):
+    """Search with yadcf"""
+    return {'project': 'jobs'}
+
+
 @view_config(route_name='show_job',
              request_method='GET',
              request_param="acknowledge_id",
@@ -134,7 +141,7 @@ def recipients_data(request):
     columns = [
         ColumnDT(Job.files_acknowledge_id),
         ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
-        ColumnDT(File.target_path, search_method='yadcf_autocomplete'),
+        ColumnDT(File.target_path),
         ColumnDT(File.size, search_method='yadcf_range_number'),
         ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
         #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
@@ -157,7 +164,7 @@ def recipients_data(request):
 
 
 @view_config(route_name='jobs_data', renderer='json_with_dates')
-def recipients_data(request):
+def jobs_data(request):
     """Return server side data."""
     # defining columns
     columns = [
