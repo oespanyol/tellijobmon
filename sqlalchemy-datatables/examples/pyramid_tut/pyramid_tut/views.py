@@ -43,11 +43,11 @@ def dt_110x_advanced_column_search(request):
     return {'project': 'dt_110x_advanced_column_search'}
 
 
-@view_config(route_name='dt_110x_yadcf',
-             renderer='templates/dt_110x_yadcf.jinja2')
-def dt_110x_yadcf(request):
+@view_config(route_name='recipients',
+             renderer='templates/recipients.jinja2')
+def all_recipients(request):
     """Search with yadcf"""
-    return {'project': 'dt_110x_yadcf'}
+    return {'project': 'recipients'}
 
 
 @view_config(route_name='show_job',
@@ -127,8 +127,8 @@ def data_advanced(request):
     return row_table.output_result()
 
 
-@view_config(route_name='data_yadcf', renderer='json_with_dates')
-def data_yadcf(request):
+@view_config(route_name='recipients_data', renderer='json_with_dates')
+def recipients_data(request):
     """Return server side data."""
     # defining columns
     columns = [
