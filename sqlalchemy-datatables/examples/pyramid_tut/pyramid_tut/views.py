@@ -156,6 +156,31 @@ def recipients_data(request):
     return row_table.output_result()
 
 
+@view_config(route_name='jobs_data', renderer='json_with_dates')
+def recipients_data(request):
+    """Return server side data."""
+    # defining columns
+    columns = [
+        ColumnDT(Job.files_acknowledge_id),
+        ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
+        ColumnDT(Job.scheduling_start_time, search_method='yadcf_range_date'),
+        ColumnDT(Job.scheduling_priority, search_method='yadcf_range_number'),
+        ColumnDT(Job.scheduling_acknowledgement_interval, search_method='yadcf_range_number'),
+        ColumnDT(Job.system_nr_of_transmitted_bytes, search_method='yadcf_range_number'),
+        ColumnDT(Job.system_completion_percentage, search_method='yadcf_range_number'),
+        ColumnDT(Job.system_transmissions_done, search_method='yadcf_range_number')
+    ]
+
+    # defining the initial query depending on your purpose
+    query = DBSession.query().select_from(Job)
+
+    # instantiating a DataTable for the query and table needed
+    row_table = DataTables(request.GET, query, columns)
+
+    # returns what is needed by DataTable
+    return row_table.output_result()
+
+
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem
 might be caused by one of the following things:
