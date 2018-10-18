@@ -16,31 +16,18 @@ def home(request):
     return {'project': 'pyramid_tut'}
 
 
-@view_config(route_name='dt_110x', renderer='templates/dt_110x.jinja2')
-def dt_110x(request):
-    """List users with DataTables >= 1.10.x."""
-    return {'project': 'dt_110x'}
+@view_config(route_name='jobs',
+             renderer='templates/jobs.jinja2')
+def all_jobs(request):
+    """Search with yadcf"""
+    return {'project': 'jobs'}
 
 
-@view_config(route_name='dt_110x_custom_column',
-             renderer='templates/dt_110x_custom_column.jinja2')
-def dt_110x_custom_column(request):
-    """Show a CRUD custom column"""
-    return {'project': 'dt_110x_custom_column'}
-
-
-@view_config(route_name='dt_110x_basic_column_search',
-             renderer='templates/show_job.jinja2')
-def dt_110x_basic_column_search(request):
-    """Text based per column search"""
-    return {'project': 'dt_110x_basic_column_search'}
-
-
-@view_config(route_name='dt_110x_advanced_column_search',
-             renderer='templates/dt_110x_advanced_column_search.jinja2')
-def dt_110x_advanced_column_search(request):
-    """Advanced per column search"""
-    return {'project': 'dt_110x_advanced_column_search'}
+@view_config(route_name='files',
+             renderer='templates/files.jinja2')
+def all_files(request):
+    """Search with yadcf"""
+    return {'project': 'files'}
 
 
 @view_config(route_name='recipients',
@@ -48,13 +35,6 @@ def dt_110x_advanced_column_search(request):
 def all_recipients(request):
     """Search with yadcf"""
     return {'project': 'recipients'}
-
-
-@view_config(route_name='jobs',
-             renderer='templates/jobs.jinja2')
-def all_jobs(request):
-    """Search with yadcf"""
-    return {'project': 'jobs'}
 
 
 @view_config(route_name='show_job',
@@ -72,95 +52,6 @@ def job(request):
     a_job = DBSession.query(Job).first()
     some_data = a_job.to_json_table()
     return some_data
-
-
-@view_config(route_name='data', renderer='json')
-def data(request):
-    """Return server side data."""
-    # defining columns
-    #  - explicitly cast date to string, so string searching the date
-    #    will search a date formatted equal to how it is presented
-    #    in the table
-    columns = [
-        ColumnDT(Job.files_acknowledge_id),
-        ColumnDT(Job.channel_name),
-        #ColumnDT(Job.scheduling_priority),
-        #ColumnDT(Job.scheduling_start_time),
-        #ColumnDT(Job.system_nr_of_transmitted_bytes)
-        ColumnDT(File.target_path),
-        ColumnDT(File.size),
-        #ColumnDT(File.time_stamp),
-        ColumnDT(Recipient.name)
-        #ColumnDT(Recipient.received)
-    ]
-
-    # defining the initial query depending on your purpose
-    #  - don't include any columns
-    #  - if you need a join, also include a 'select_from'
-    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
-#        .filter(Address.id > 4)
-#    query = DBSession.query().select_from(Job)
-
-    # instantiating a DataTable for the query and table needed
-    row_table = DataTables(request.GET, query, columns)
-
-    # returns what is needed by DataTable
-    return row_table.output_result()
-
-
-@view_config(route_name='data_advanced', renderer='json_with_dates')
-def data_advanced(request):
-    """Return server side data."""
-    # defining columns
-    columns = [
-        #ColumnDT(Job.scheduling_priority, search_method='numeric'),
-        ColumnDT(Job.id),
-        ColumnDT(Job.channel_name),
-        ColumnDT(File.target_path),
-        ColumnDT(File.size, search_method='numeric'),
-        #ColumnDT(Job.accounting_customer),
-        ColumnDT(File.time_stamp, search_method='date'),
-        ColumnDT(Recipient.name)
-        #ColumnDT(Recipient.received, search_method='numeric')
-    ]
-
-    # defining the initial query depending on your purpose
-    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
-
-    # instantiating a DataTable for the query and table needed
-    row_table = DataTables(request.GET, query, columns)
-
-    # returns what is needed by DataTable
-    return row_table.output_result()
-
-
-@view_config(route_name='recipients_data', renderer='json_with_dates')
-def recipients_data(request):
-    """Return server side data."""
-    # defining columns
-    columns = [
-        ColumnDT(Job.files_acknowledge_id),
-        ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
-        ColumnDT(File.target_path),
-        ColumnDT(File.size, search_method='yadcf_range_number'),
-        ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
-        #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
-        ColumnDT(File.time_stamp, search_method='yadcf_range_date')
-    ]
-
-    # defining the initial query depending on your purpose
-    # defining the initial query depending on your purpose
-    #    query = DBSession.query().\
-    #            select_from(User).\
-    #        join(Address).\
-    #        filter(Address.id > 4)
-    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
-
-    # instantiating a DataTable for the query and table needed
-    row_table = DataTables(request.GET, query, columns)
-
-    # returns what is needed by DataTable
-    return row_table.output_result()
 
 
 @view_config(route_name='jobs_data', renderer='json_with_dates')
@@ -187,6 +78,51 @@ def jobs_data(request):
     # returns what is needed by DataTable
     return row_table.output_result()
 
+
+@view_config(route_name='files_data', renderer='json_with_dates')
+def files_data(request):
+    """Return server side data."""
+    # defining columns
+    columns = [
+        ColumnDT(File.file_id),
+        ColumnDT(Job.files_acknowledge_id),
+        ColumnDT(File.target_path),
+        ColumnDT(File.size, search_method='yadcf_range_number'),
+        ColumnDT(File.time_stamp, search_method='yadcf_range_date')
+    ]
+
+    # defining the initial query depending on your purpose
+    query = DBSession.query().select_from(Job).join(File).filter(File.type == 1)
+
+    # instantiating a DataTable for the query and table needed
+    row_table = DataTables(request.GET, query, columns)
+
+    # returns what is needed by DataTable
+    return row_table.output_result()
+
+
+@view_config(route_name='recipients_data', renderer='json_with_dates')
+def recipients_data(request):
+    """Return server side data."""
+    # defining columns
+    columns = [
+        ColumnDT(Job.files_acknowledge_id),
+        ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
+        ColumnDT(File.target_path),
+        ColumnDT(File.size, search_method='yadcf_range_number'),
+        ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
+        #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
+        ColumnDT(File.time_stamp, search_method='yadcf_range_date')
+    ]
+
+    # defining the initial query depending on your purpose
+    query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
+
+    # instantiating a DataTable for the query and table needed
+    row_table = DataTables(request.GET, query, columns)
+
+    # returns what is needed by DataTable
+    return row_table.output_result()
 
 conn_err_msg = """\
 Pyramid is having a problem using your SQL database.  The problem

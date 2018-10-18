@@ -21,19 +21,15 @@ def main(global_config, **settings):
     config.include('pyramid_jinja2')
     config.include('pyramid_debugtoolbar')
     config.add_route('home', '/')
-    config.add_route('data', '/data')
-    config.add_route('data_advanced', '/data_advanced')
-
-    config.add_route('dt_110x', '/dt_110x')
-    config.add_route('dt_110x_custom_column', '/dt_110x_custom_column')
-    config.add_route('dt_110x_basic_column_search', '/dt_110x_basic_column_search')
-    config.add_route('dt_110x_advanced_column_search', '/dt_110x_advanced_column_search')
     config.add_route('recipients', '/recipients')
     config.add_route('recipients_data', '/recipients_data')
     config.add_route('jobs', '/jobs')
     config.add_route('jobs_data', '/jobs_data')
+    config.add_route('files', '/files')
+    config.add_route('files_data', '/files_data')
     config.add_route('show_job', '/show_job')
     config.add_route('job', '/job')
+    config.add_route('all', '/all')
     config.scan()
 
     # only for advanced example
