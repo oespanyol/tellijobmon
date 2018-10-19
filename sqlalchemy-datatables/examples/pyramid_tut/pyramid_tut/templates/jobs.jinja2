@@ -37,7 +37,7 @@
             targets: 0,
             render: function (data, type, row, meta) {
                 if (type === 'display') {
-                    data = '<a href="show_job?acknowledge_id=' + encodeURIComponent(data) + '">' + data + '</a>';
+                    data = '<a href="show_job/' + encodeURIComponent(data) + '">' + data + '</a>';
                 }
                 return data;
             }

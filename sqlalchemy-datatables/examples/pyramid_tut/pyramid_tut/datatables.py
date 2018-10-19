@@ -130,6 +130,7 @@ search_methods = {
     'like': lambda expr, value: expr.like(value),
     'numeric': numeric_query,
     'date': date_query,
+    'text': lambda expr, value: expr.ilike('%' + value + '%'),
     'yadcf_text': lambda expr, value: expr.ilike('%' + value + '%'),
     'yadcf_autocomplete': lambda expr, value: expr == value,
     'yadcf_select': lambda expr, value: expr.ilike('%' + value + '%'),

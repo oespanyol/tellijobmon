@@ -31,10 +31,18 @@
         "serverSide": true,
         "lengthMenu": [ 10, 100, 1000, 5000],
         "columnDefs": [{
+            targets: 0,
+            render: function (data, type, row, meta) {
+                if (type === 'display') {
+                    data = '<a href="show_file/' + encodeURIComponent(data) + '">' + data + '</a>';
+                }
+                return data;
+            }
+        },{
             targets: 1,
             render: function (data, type, row, meta) {
                 if (type === 'display') {
-                    data = '<a href="show_job?acknowledge_id=' + encodeURIComponent(data) + '">' + data + '</a>';
+                    data = '<a href="show_job/' + encodeURIComponent(data) + '">' + data + '</a>';
                 }
                 return data;
             }
@@ -44,19 +52,20 @@
 
       yadcf.init(table, [{
         column_number: 0,
-        filter_type: "yadcf_text"
+        filter_type: "text",
+        filter_type: "select2"
       }, {
         column_number: 1,
-        filter_type: "yadcf_text",
-        select_type: "chosen"
+        filter_type: "text",
+        select_type: "select2"
       }, {
         column_number: 2,
         filter_type: "text",
-        select_type: "chosen"
+        select_type: "select2"
       }, {
         column_number: 3,
         filter_type: "range_number",
-        select_type: "chosen"
+        select_type: "select2"
       }, {
         column_number: 4,
         filter_type: "range_date",

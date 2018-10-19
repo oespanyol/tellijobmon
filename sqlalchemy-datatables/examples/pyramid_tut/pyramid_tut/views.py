@@ -38,20 +38,43 @@ def all_recipients(request):
 
 
 @view_config(route_name='show_job',
-             request_method='GET',
-             request_param="acknowledge_id",
              renderer='templates/show_job.jinja2')
 def show_job(request):
     """Display a job"""
     return {'project': 'show_job'}
 
 
-@view_config(route_name='job', renderer='json')
+@view_config(route_name='job',
+             request_method='GET',
+             request_param='job_id',
+             renderer='json')
 def job(request):
+    # Get the job ID from the request
+    job_id = request.GET["job_id"]
+    # Retrieve the corresponding job from the DB
+    the_job = DBSession.query(Job).filter(Job.files_acknowledge_id == str(job_id)).first()
+    job_json = the_job.to_json_table()
+    return job_json
 
-    a_job = DBSession.query(Job).first()
-    some_data = a_job.to_json_table()
-    return some_data
+
+@view_config(route_name='show_file',
+             renderer='templates/show_file.jinja2')
+def show_file(request):
+    """Display a file"""
+    return {'project': 'show_file'}
+
+
+@view_config(route_name='file',
+             request_method='GET',
+             request_param='file_id',
+             renderer='json')
+def file(request):
+    # Get the job ID from the request
+    file_id = request.GET["file_id"]
+    # Retrieve the corresponding job from the DB
+    the_file = DBSession.query(File).filter(File.file_id == str(file_id)).first()
+    file_json = the_file.to_json_table()
+    return file_json
 
 
 @view_config(route_name='jobs_data', renderer='json_with_dates')
@@ -84,9 +107,9 @@ def files_data(request):
     """Return server side data."""
     # defining columns
     columns = [
-        ColumnDT(File.file_id),
-        ColumnDT(Job.files_acknowledge_id),
-        ColumnDT(File.target_path),
+        ColumnDT(File.file_id, search_method='text'),
+        ColumnDT(Job.files_acknowledge_id, search_method='text'),
+        ColumnDT(File.target_path, search_method='text'),
         ColumnDT(File.size, search_method='yadcf_range_number'),
         ColumnDT(File.time_stamp, search_method='yadcf_range_date')
     ]

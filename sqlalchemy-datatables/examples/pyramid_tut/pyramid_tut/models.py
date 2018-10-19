@@ -250,6 +250,27 @@ class File(Base):
             self.last_send_time_stamp = \
                 datetime.datetime.strptime(filedict['last_send_time_stamp'][:26], "%Y-%m-%d %H:%M:%S.%f")
 
+    def to_json_table(self):
+
+        file_copy = self.__dict__.copy()
+        # Remove entry corresponding to SQLAlchemy: _sa_instance_state
+        file_copy.pop('_sa_instance_state', None)
+
+        output = {}
+        job_data = []
+        for key, value in file_copy.iteritems():
+            columns = {}
+            columns['0'] = str(key)
+            columns['1'] = str(value)
+            job_data.append(columns)
+
+        output['draw'] = str(int("1"))
+        output['recordsTotal'] = str(len(file_copy))
+        output['recordsFiltered'] = str(len(file_copy))
+        output['data'] = job_data
+
+        return output
+
     def __repr__(self):
         return "<File(" \
                "id = '%s'," \
