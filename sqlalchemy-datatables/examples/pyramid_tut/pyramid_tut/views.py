@@ -129,13 +129,13 @@ def recipients_data(request):
     """Return server side data."""
     # defining columns
     columns = [
-        ColumnDT(Job.files_acknowledge_id),
-        ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
         ColumnDT(File.target_path),
-        ColumnDT(File.size, search_method='yadcf_range_number'),
+        ColumnDT(Job.channel_name, search_method='yadcf_multi_select'),
         ColumnDT(Recipient.name, search_method='yadcf_multi_select'),
-        #ColumnDT(Recipient.received, search_method='yadcf_range_number_slider')
-        ColumnDT(File.time_stamp, search_method='yadcf_range_date')
+        ColumnDT(File.time_stamp, search_method='yadcf_range_date'),
+        ColumnDT(Recipient.received, search_method='yadcf_range_number'),
+        ColumnDT(Job.files_acknowledge_id),
+        ColumnDT(File.size, search_method='yadcf_range_number')
     ]
 
     # defining the initial query depending on your purpose

@@ -7,12 +7,13 @@
              cellspacing="0" width="100%">
         <thead>
           <tr>
-            <th>Acknowledge Id</th>
-            <th>Channel</th>
             <th>File name</th>
-            <th>File size</th>
+            <th>Channel</th>
             <th>Recipient</th>
             <th>Timestamp</th>
+            <th>Received</th>
+            <th>Acknowledge Id</th>
+            <th>File size</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -44,23 +45,18 @@
       });
 
       yadcf.init(table, [{
-        column_number: 0
+        column_number: 0,
+        filter_type: "text"
       }, {
         column_number: 1,
         filter_type: "multi_select",
         select_type: "chosen"
       }, {
         column_number: 2,
-        filter_type: "auto_complete"
-      }, {
-        column_number: 3,
-        filter_type: "range_number"
-      }, {
-        column_number: 4,
         filter_type: "multi_select",
         select_type: "chosen"
       }, {
-        column_number: 5,
+        column_number: 3,
         filter_type: "range_date",
         date_format: "yyyy-mm-dd hh:MM:ss",
         moment_date_format: "YYYY-MM-DD HH:mm:ss",
@@ -71,6 +67,15 @@
           sideBySide: true,
           format: "YYYY-MM-DD HH:mm:ss"
         }
+      }, {
+        column_number: 4,
+        filter_type: "range_number"
+      }, {
+        column_number: 5,
+        filter_type: "text"
+      }, {
+        column_number: 6,
+        filter_type: "range_number"
       }]);
     });
   </script>
