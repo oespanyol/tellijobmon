@@ -8,7 +8,7 @@ from pyramid.paster import get_appsettings, setup_logging
 from pyramid.scripts.common import parse_vars
 from sqlalchemy import engine_from_config
 
-from ..models import Address, Base, DBSession, User
+from ..models import Base, DBSession
 
 
 def usage(argv):

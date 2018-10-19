@@ -4,17 +4,16 @@ Basic example: a User has one or many Addresses.
 """
 import datetime
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, Unicode, func, String, Boolean, DateTime, Float
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (backref, column_property, relationship, scoped_session, sessionmaker)
+from sqlalchemy.orm import (backref, relationship, scoped_session, sessionmaker)
 from zope.sqlalchemy import ZopeTransactionExtension
-import json
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 
-class Job(Base, json.JSONEncoder):
+class Job(Base):
     __tablename__ = 'jobs'
     id = Column(Integer, primary_key=True, autoincrement=True)
     files_acknowledge_id = Column(String)
