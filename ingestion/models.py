@@ -1,53 +1,49 @@
 #!/usr/bin/env python
 
 import datetime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import (backref, relationship, scoped_session, sessionmaker)
+from zope.sqlalchemy import ZopeTransactionExtension
 
-
-__author__    = "Oriol Espanyol"
-__copyright__ = "Copyright 2018, EUMETCast Terrestrial Pathfinder-II"
-__license__   = "GPL"
-__version__   = "1.0.1"
-__email__     = "oriol.espanyol@eumetsat.int"
-__status__    = "Development"
-
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 
 class Job(Base):
     __tablename__ = 'jobs'
-    id                                          = Column(Integer, primary_key=True, autoincrement=True)
-    files_acknowledge_id                        = Column(String  )
-    files_source_directory                      = Column(String  )
-    files_target_directory                      = Column(String  )
-    files_state_files_directory                 = Column(String  )
-    files_integrity_check                       = Column(Boolean, unique=False, default=False)
-    channel_name                                = Column(String  )
-    accounting_customer                         = Column(String  )
-    scheduling_allow_recipient_modifications    = Column(String  )
-    scheduling_start_time                       = Column(DateTime)
-    scheduling_priority                         = Column(Integer )
-    scheduling_retransmission_interval          = Column(Integer )
-    scheduling_start_time_window                = Column(Integer )
-    scheduling_nr_of_transmissions              = Column(Integer )
-    scheduling_status_keep_time                 = Column(Integer )
-    scheduling_expire_time                      = Column(DateTime)
-    scheduling_retransmission_type              = Column(String  )
-    scheduling_acknowledgement_interval         = Column(Integer )
-    scheduling_loss_rate_threshold              = Column(Integer )
-    scheduling_request_acknowledgements         = Column(Integer )
-    scheduling_atomicity                        = Column(Integer )
-    scheduling_client_file_database_expire_time = Column(Integer )
-    recipients_file                             = Column(String  )
-    system_is_complete                          = Column(Boolean, unique=False, default=True)
-    system_nr_of_transmitted_bytes              = Column(Integer )
-    system_completion_percentage                = Column(Float   )
-    system_next_start_time                      = Column(DateTime)
-    system_transmissions_done                   = Column(Integer )
-    system_packet_naks_allowed                  = Column(Boolean, unique=False, default=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    files_acknowledge_id = Column(String)
+    files = relationship('File', backref=backref('Job'))
+    recipients = relationship('Recipient', backref=backref('File'))
+    files_source_directory = Column(String)
+    files_target_directory = Column(String)
+    files_state_files_directory = Column(String)
+    files_integrity_check = Column(Boolean, unique=False, default=False)
+    channel_name = Column(String)
+    accounting_customer = Column(String)
+    scheduling_allow_recipient_modifications = Column(String)
+    scheduling_start_time = Column(DateTime)
+    scheduling_priority = Column(Integer)
+    scheduling_retransmission_interval = Column(Integer)
+    scheduling_start_time_window = Column(Integer)
+    scheduling_nr_of_transmissions = Column(Integer)
+    scheduling_status_keep_time = Column(Integer)
+    scheduling_expire_time = Column(DateTime)
+    scheduling_retransmission_type = Column(String)
+    scheduling_acknowledgement_interval = Column(Integer)
+    scheduling_loss_rate_threshold = Column(Integer)
+    scheduling_request_acknowledgements = Column(Integer)
+    scheduling_atomicity = Column(Integer)
+    scheduling_client_file_database_expire_time = Column(Integer)
+    recipients_file = Column(String)
+    system_is_complete = Column(Boolean, unique=False, default=True)
+    system_nr_of_transmitted_bytes = Column(Integer)
+    system_completion_percentage = Column(Float)
+    system_next_start_time = Column(DateTime)
+    system_transmissions_done = Column(Integer)
+    system_packet_naks_allowed = Column(Boolean, unique=False, default=False)
 
     def __init__(self, jobdict):
         self.files_acknowledge_id = jobdict['files_acknowledge_id']
@@ -58,13 +54,14 @@ class Job(Base):
         self.channel_name = jobdict['channel_name']
         self.accounting_customer = jobdict['accounting_customer']
         self.scheduling_allow_recipient_modifications = str2bool(jobdict['scheduling_allow_recipient_modifications'])
-        self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'], "%Y-%m-%d %H:%M:%S")
+        self.scheduling_start_time = datetime.datetime.strptime(jobdict['scheduling_start_time'],"%Y-%m-%d %H:%M:%S")
         self.scheduling_priority = int(jobdict['scheduling_priority'])
         self.scheduling_retransmission_interval = int(jobdict['scheduling_retransmission_interval'])
         self.scheduling_start_time_window = int(jobdict['scheduling_start_time_window'])
         self.scheduling_nr_of_transmissions = int(jobdict['scheduling_nr_of_transmissions'])
         self.scheduling_status_keep_time = int(jobdict['scheduling_status_keep_time'])
-        self.scheduling_expire_time = datetime.datetime.strptime(jobdict['scheduling_expire_time'], "%Y-%m-%d %H:%M:%S")
+        self.scheduling_expire_time = datetime.datetime.strptime(jobdict['scheduling_expire_time'],
+                                                                 "%Y-%m-%d %H:%M:%S")
         self.scheduling_retransmission_type = jobdict['scheduling_retransmission_type']
         self.scheduling_acknowledgement_interval = int(jobdict['scheduling_acknowledgement_interval'])
         self.scheduling_loss_rate_threshold = int(jobdict['scheduling_loss_rate_threshold'])
@@ -75,9 +72,30 @@ class Job(Base):
         self.system_is_complete = str2bool(jobdict['system_is_complete'])
         self.system_nr_of_transmitted_bytes = int(jobdict['system_nr_of_transmitted_bytes'])
         self.system_completion_percentage = float(jobdict['system_completion_percentage'])
-        self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'], "%Y-%m-%d %H:%M:%S")
+        self.system_next_start_time = datetime.datetime.strptime(jobdict['system_next_start_time'],"%Y-%m-%d %H:%M:%S")
         self.system_transmissions_done = int(jobdict['system_transmissions_done'])
         self.system_packet_naks_allowed = str2bool(jobdict['system_packet_naks_allowed'])
+
+    def to_json_table(self):
+
+        job_copy = self.__dict__.copy()
+        # Remove entry corresponding to SQLAlchemy: _sa_instance_state
+        job_copy.pop('_sa_instance_state', None)
+
+        output = {}
+        job_data = []
+        for key, value in job_copy.iteritems():
+            columns = {}
+            columns['0'] = str(key)
+            columns['1'] = str(value)
+            job_data.append(columns)
+
+        output['draw'] = str(int("1"))
+        output['recordsTotal'] = str(len(job_copy))
+        output['recordsFiltered'] = str(len(job_copy))
+        output['data'] = job_data
+
+        return output
 
     def __repr__(self):
         return "<Job(" \
@@ -89,20 +107,20 @@ class Job(Base):
                "files_integrity_check = '%s'," \
                "channel_name = '%s', " \
                "accounting_customer = '%s'," \
-               "scheduling_allow_recipient_modifications = '%s', "\
+               "scheduling_allow_recipient_modifications = '%s', " \
                "scheduling_start_time = '%s'," \
-               "scheduling_priority = '%u', "\
-               "scheduling_retransmission_interval = '%u', "\
-               "scheduling_start_time_window = '%u', "\
-               "scheduling_nr_of_transmissions = '%u', "\
-               "scheduling_status_keep_time = '%u', "\
+               "scheduling_priority = '%u', " \
+               "scheduling_retransmission_interval = '%u', " \
+               "scheduling_start_time_window = '%u', " \
+               "scheduling_nr_of_transmissions = '%u', " \
+               "scheduling_status_keep_time = '%u', " \
                "scheduling_expire_time = '%s'," \
                "scheduling_retransmission_type = '%s', " \
-               "scheduling_acknowledgement_interval = '%u', "\
-               "scheduling_loss_rate_threshold = '%u', "\
-               "scheduling_request_acknowledgements = '%u', "\
-               "scheduling_atomicity = '%u', "\
-               "scheduling_client_file_database_expire_time = '%u', "\
+               "scheduling_acknowledgement_interval = '%u', " \
+               "scheduling_loss_rate_threshold = '%u', " \
+               "scheduling_request_acknowledgements = '%u', " \
+               "scheduling_atomicity = '%u', " \
+               "scheduling_client_file_database_expire_time = '%u', " \
                "recipients_file = '%s'," \
                "system_is_complete = '%s'," \
                "system_nr_of_transmitted_bytes = '%u'," \
@@ -144,22 +162,22 @@ class Job(Base):
 
 class File(Base):
     __tablename__ = 'files'
-    id                   = Column(Integer, primary_key=True, autoincrement=True)
-    file_id              = Column(String)
-    files_acknowledge_id = Column(String)
-    done                 = Column(Boolean, unique=False, default=False)
-    type                 = Column(Integer)
-    relay_file           = Column(Boolean, unique=False, default=False)
-    path                 = Column(String)
-    target_path          = Column(String)
-    state_file           = Column(String)
-    size                 = Column(Integer)
-    sent_fragment        = Column(String)
-    time_stamp           = Column(DateTime)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    file_id = Column(String)
+    files_acknowledge_id = Column(String, ForeignKey('jobs.files_acknowledge_id'))
+    done = Column(Boolean, unique=False, default=False)
+    type = Column(Integer)
+    relay_file = Column(Boolean, unique=False, default=False)
+    path = Column(String)
+    target_path = Column(String)
+    state_file = Column(String)
+    size = Column(Integer)
+    sent_fragment = Column(String)
+    time_stamp = Column(DateTime)
     last_send_time_stamp = Column(DateTime)
 
     def __init__(self, filedict):
-        self.file_id              = filedict['id']
+        self.file_id = filedict['id']
         if 'files_acknowledge_id' in filedict:
             self.files_acknowledge_id = filedict['files_acknowledge_id']
         if 'done' in filedict:
@@ -184,6 +202,27 @@ class File(Base):
             self.last_send_time_stamp = \
                 datetime.datetime.strptime(filedict['last_send_time_stamp'][:26], "%Y-%m-%d %H:%M:%S.%f")
 
+    def to_json_table(self):
+
+        file_copy = self.__dict__.copy()
+        # Remove entry corresponding to SQLAlchemy: _sa_instance_state
+        file_copy.pop('_sa_instance_state', None)
+
+        output = {}
+        job_data = []
+        for key, value in file_copy.iteritems():
+            columns = {}
+            columns['0'] = str(key)
+            columns['1'] = str(value)
+            job_data.append(columns)
+
+        output['draw'] = str(int("1"))
+        output['recordsTotal'] = str(len(file_copy))
+        output['recordsFiltered'] = str(len(file_copy))
+        output['data'] = job_data
+
+        return output
+
     def __repr__(self):
         return "<File(" \
                "id = '%s'," \
@@ -195,7 +234,7 @@ class File(Base):
                "path = '%s', " \
                "target_path = '%s'," \
                "state_file = '%s'," \
-               "size = '%u', "\
+               "size = '%u', " \
                "sent_fragment = '%s'," \
                "time_stamp = '%s'," \
                "last_send_time_stamp = '%s'," \
@@ -217,34 +256,34 @@ class File(Base):
 
 class Recipient(Base):
     __tablename__ = 'recipients'
-    id                   = Column(Integer, primary_key=True, autoincrement=True)
-    name                 = Column(String)
-    ip                   = Column(String)
-    files_acknowledge_id = Column(String)
-    unconfirmed          = Column(Boolean, unique=False, default=False)
-    complete             = Column(Boolean, unique=False, default=False)
-    received             = Column(Float)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    ip = Column(String)
+    files_acknowledge_id = Column(String, ForeignKey('jobs.files_acknowledge_id'))
+    unconfirmed = Column(Boolean, unique=False, default=False)
+    complete = Column(Boolean, unique=False, default=False)
+    received = Column(Float)
 
     def __init__(self, recipientdict):
         # Mandatory fields
-        self.name                 = recipientdict['name']
+        self.name = recipientdict['name']
         self.files_acknowledge_id = recipientdict['files_acknowledge_id']
         # Optional fields
         if 'ip' in recipientdict:
-            self.ip                   = recipientdict['ip']
+            self.ip = recipientdict['ip']
         if 'unconfirmed' in recipientdict:
-            self.unconfirmed          = str2bool(recipientdict['unconfirmed'])
+            self.unconfirmed = str2bool(recipientdict['unconfirmed'])
         if 'complete' in recipientdict:
-            self.complete             = str2bool(recipientdict['complete'])
+            self.complete = str2bool(recipientdict['complete'])
         if 'received' in recipientdict:
-            self.received             = float(recipientdict['received'])
+            self.received = float(recipientdict['received'])
 
     def __repr__(self):
         return "<Recipient(" \
                "id='%s', " \
                "name='%s', " \
                "ip='%s', " \
-               "files_acknowledge_id='%s', "\
+               "files_acknowledge_id='%s', " \
                "unconfirmed='%s', " \
                "complete='%s', " \
                "received='%.6f'" \
@@ -261,6 +300,16 @@ class Recipient(Base):
 def str2bool(v):
     # TODO : handle the 'False' cases and return error if not found
     return v.lower() in ("yes", "true", "t", "1")
+
+
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+
+    return obj.__dict__
 
 
 class _InitPersist:
