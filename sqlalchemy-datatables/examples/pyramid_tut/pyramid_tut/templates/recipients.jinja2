@@ -33,10 +33,10 @@
         "serverSide": true,
         "lengthMenu": [ 10, 100, 1000, 5000],
         "columnDefs": [{
-            targets: 0,
+            targets: 5,
             render: function (data, type, row, meta) {
                 if (type === 'display') {
-                    data = '<a href="show_job?acknowledge_id=' + encodeURIComponent(data) + '">' + data + '</a>';
+                    data = '<a href="show_job/' + encodeURIComponent(data) + '">' + data + '</a>';
                 }
                 return data;
             }
