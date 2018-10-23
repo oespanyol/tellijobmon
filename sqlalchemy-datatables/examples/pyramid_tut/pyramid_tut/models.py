@@ -7,6 +7,7 @@ import datetime
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (backref, relationship, scoped_session, sessionmaker)
+from sqlalchemy import engine_from_config
 from zope.sqlalchemy import ZopeTransactionExtension
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
@@ -299,6 +300,73 @@ class Recipient(Base):
                        )
 
 
+class TimeSlot(Base):
+    __tablename__ = 'time_slots'
+    id = Column(String, primary_key=True)
+    duration = Column(Integer)
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
+    total_nr_of_bytes = Column(Integer)
+    total_nr_of_files = Column(Integer)
+
+    def __init__(self, time_slot_dict):
+        self.duration = int(time_slot_dict['duration'])
+        self.start_time = time_slot_dict['start_time']
+        self.end_time = time_slot_dict['end_time']
+        self.total_nr_of_bytes = int(time_slot_dict['total_nr_of_bytes'])
+        self.total_nr_of_files = int(time_slot_dict['total_nr_of_files'])
+        self.id = self.start_time.strftime("%s") + '+' + str(self.duration)
+
+    def __repr__(self):
+        return "<TimeSlot(" \
+               "id='%s', " \
+               "duration='%s', " \
+               "start_time='%s', " \
+               "end_time='%s', " \
+               "total_nr_of_bytes='%s', " \
+               "total_nr_of_files='%s'" \
+               ")>" % (self.id,
+                       self.duration,
+                       self.start_time,
+                       self.end_time,
+                       self.total_nr_of_bytes,
+                       self.total_nr_of_files
+                       )
+
+
+class RecipientTimeSlot(Base):
+    __tablename__ = 'recipients_time_slots'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    sent_nr_of_bytes = Column(Integer)
+    sent_nr_of_files = Column(Integer)
+    received_nr_of_bytes = Column(Integer)
+    received_nr_of_files = Column(Integer)
+
+    def __init__(self, rec_time_slot_dict):
+        self.name = rec_time_slot_dict['name']
+        self.sent_nr_of_bytes = int(rec_time_slot_dict['sent_nr_of_bytes'])
+        self.sent_nr_of_files = int(rec_time_slot_dict['sent_nr_of_files'])
+        self.received_nr_of_bytes = int(rec_time_slot_dict['received_nr_of_bytes'])
+        self.received_nr_of_files = int(rec_time_slot_dict['received_nr_of_files'])
+
+    def __repr__(self):
+        return "<RecipientTimeSlot(" \
+               "id='%s', " \
+               "name='%s', " \
+               "sent_nr_of_bytes='%s', " \
+               "sent_nr_of_files='%s', " \
+               "received_nr_of_bytes='%s', " \
+               "received_nr_of_files='%s'" \
+               ")>" % (self.id,
+                       self.name,
+                       self.sent_nr_of_bytes,
+                       self.sent_nr_of_files,
+                       self.received_nr_of_bytes,
+                       self.received_nr_of_files
+                       )
+
+
 def str2bool(v):
     # TODO : handle the 'False' cases and return error if not found
     return v.lower() in ("yes", "true", "t", "1")
@@ -312,3 +380,25 @@ def serialize(obj):
         return serial
 
     return obj.__dict__
+
+
+class _InitPersist:
+    """
+     Initiates the Persistence with SQLAlchemy
+    """
+    # TODO: Have all configuration read freom same
+    config = {'sqlalchemy.url': 'sqlite:////home/espanyol/workspace/tellijobsparser/'
+                        'sqlalchemy-datatables/examples/pyramid_tut/tellijobsparser.sqlite', 'sqlalchemy.echo': 'True'}
+
+    _engine = engine_from_config(config, 'sqlalchemy.')
+    #Base.metadata.drop_all(_engine)
+    Base.metadata.create_all(_engine)
+    _Session = sessionmaker(bind=_engine)
+
+    def __init__(self):
+        self.session = self._Session()
+
+
+def init():
+    session = _InitPersist().session
+    return session
