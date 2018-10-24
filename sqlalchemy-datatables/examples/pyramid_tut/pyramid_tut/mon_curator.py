@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from datetime import datetime, timedelta
-
-
 from models import Job, File, Recipient, TimeSlot, RecipientTimeSlot, init
+from sqlalchemy import and_
 
 
 def gen_avail_stats(time_slot_duration):
@@ -19,7 +18,8 @@ def gen_avail_stats(time_slot_duration):
         filter(File.time_stamp > start_time).\
         filter(File.time_stamp <= end_time).all()
 
-    time_slot_dict = {'duration': time_slot_duration,
+    time_slot_dict = {'id': start_time.strftime("%s")+'+'+str(time_slot_duration),
+                      'duration': time_slot_duration,
                       'total_nr_of_bytes': 0,
                       'total_nr_of_files': 0,
                       'start_time': start_time,
@@ -36,11 +36,12 @@ def gen_avail_stats(time_slot_duration):
             for recipient in job.recipients:
                 name = recipient.name
                 if name not in recip_reports.keys():
-                    recip_files_dict = {'sent_nr_of_bytes': 0,
+                    recip_files_dict = {'name': name,
+                                        'time_slot_id': time_slot_dict['id'],
+                                        'sent_nr_of_bytes': 0,
                                         'sent_nr_of_files': 0,
                                         'received_nr_of_bytes': 0,
-                                        'received_nr_of_files': 0,
-                                        'name': name}
+                                        'received_nr_of_files': 0}
                     recip_reports[name] = recip_files_dict
 
                 recip_reports[name]['sent_nr_of_bytes'] += a_file.size
@@ -51,21 +52,34 @@ def gen_avail_stats(time_slot_duration):
                     recip_reports[name]['received_nr_of_files'] += 1
 
     # Persist time slots in database
-    new_time_slot = TimeSlot(time_slot_dict)
-    old_time_slot = session.query(TimeSlot).filter(TimeSlot.id == new_time_slot.id).first()
-    old_time_slot = new_time_slot
-    session.commit()
+    time_slot_query = session.query(TimeSlot).filter(TimeSlot.id == time_slot_dict['id']).first()
+    if not time_slot_query:
+        # Create a new time slot if none exists
+        session.add(TimeSlot(time_slot_dict))
+    else:
+        # Update time_slot if it already exists
+        time_slot_query.update(time_slot_dict)
 
-    #session.add(a_time_slot)
-    for key, value in recip_reports.iteritems():
-        a_recip_report = RecipientTimeSlot(value)
-        session.add(a_recip_report)
+    # Persist user time slots in database
+    for recp, recp_dict in recip_reports.iteritems():
+
+        recp_ts = session.query(RecipientTimeSlot).filter(and_(
+            RecipientTimeSlot.time_slot_id == recp_dict['time_slot_id'],
+            RecipientTimeSlot.name == recp_dict['name'])
+        ).first()
+
+        if not recp_ts:
+            # Create a new entry
+            session.add(RecipientTimeSlot(recp_dict))
+        else:
+            # Update entry
+            recp_ts.update(recp_dict)
 
     session.commit()
 
 
 if __name__ == '__main__':
 
-    time_slot_duration = int(100)
+    time_slot_duration = int(50)
     gen_avail_stats(time_slot_duration)
 

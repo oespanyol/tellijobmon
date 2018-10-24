@@ -308,6 +308,7 @@ class TimeSlot(Base):
     end_time = Column(DateTime)
     total_nr_of_bytes = Column(Integer)
     total_nr_of_files = Column(Integer)
+    recipients = relationship('RecipientTimeSlot', backref=backref('TimeSlot'))
 
     def __init__(self, time_slot_dict):
         self.duration = int(time_slot_dict['duration'])
@@ -316,6 +317,10 @@ class TimeSlot(Base):
         self.total_nr_of_bytes = int(time_slot_dict['total_nr_of_bytes'])
         self.total_nr_of_files = int(time_slot_dict['total_nr_of_files'])
         self.id = self.start_time.strftime("%s") + '+' + str(self.duration)
+
+    def update(self, a_dict):
+        self.total_nr_of_bytes = a_dict['total_nr_of_bytes']
+        self.total_nr_of_files = a_dict['total_nr_of_files']
 
     def __repr__(self):
         return "<TimeSlot(" \
@@ -337,6 +342,7 @@ class TimeSlot(Base):
 class RecipientTimeSlot(Base):
     __tablename__ = 'recipients_time_slots'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    time_slot_id = Column(String, ForeignKey('time_slots.id'))
     name = Column(String)
     sent_nr_of_bytes = Column(Integer)
     sent_nr_of_files = Column(Integer)
@@ -345,20 +351,29 @@ class RecipientTimeSlot(Base):
 
     def __init__(self, rec_time_slot_dict):
         self.name = rec_time_slot_dict['name']
+        self.time_slot_id = rec_time_slot_dict['time_slot_id']
         self.sent_nr_of_bytes = int(rec_time_slot_dict['sent_nr_of_bytes'])
         self.sent_nr_of_files = int(rec_time_slot_dict['sent_nr_of_files'])
         self.received_nr_of_bytes = int(rec_time_slot_dict['received_nr_of_bytes'])
         self.received_nr_of_files = int(rec_time_slot_dict['received_nr_of_files'])
 
+    def update(self, a_dict):
+        self.sent_nr_of_bytes = a_dict['sent_nr_of_bytes']
+        self.sent_nr_of_files = a_dict['sent_nr_of_files']
+        self.received_nr_of_bytes = a_dict['received_nr_of_bytes']
+        self.received_nr_of_files = a_dict['received_nr_of_files']
+
     def __repr__(self):
         return "<RecipientTimeSlot(" \
                "id='%s', " \
+               "time_slot_id='%s', " \
                "name='%s', " \
                "sent_nr_of_bytes='%s', " \
                "sent_nr_of_files='%s', " \
                "received_nr_of_bytes='%s', " \
                "received_nr_of_files='%s'" \
                ")>" % (self.id,
+                       self.time_slot_id,
                        self.name,
                        self.sent_nr_of_bytes,
                        self.sent_nr_of_files,
