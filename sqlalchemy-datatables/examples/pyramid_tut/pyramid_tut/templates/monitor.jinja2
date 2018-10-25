@@ -11,8 +11,10 @@
             <th>Total Files</th>
             <th>Total Bytes</th>
             <th>Recipient</th>
-            <th>Files</th>
-            <th>Bytes</th>
+            <th>Sent Files</th>
+            <th>Received Files</th>
+            <th>Sent Bytes</th>
+            <th>Received Bytes</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -64,6 +66,14 @@
         select_type: "select2"
       }, {
         column_number: 5,
+        filter_type: "range_number",
+        select_type: "select2"
+      }, {
+        column_number: 6,
+        filter_type: "range_number",
+        select_type: "select2"
+      }, {
+        column_number: 7,
         filter_type: "range_number",
         select_type: "select2"
       }]);

@@ -165,7 +165,9 @@ def monitor_data(request):
         ColumnDT(TimeSlot.total_nr_of_files, search_method='yadcf_range_number'),
         ColumnDT(TimeSlot.total_nr_of_bytes, search_method='yadcf_range_number'),
         ColumnDT(RecipientTimeSlot.name, search_method='yadcf_multi_select'),
+        ColumnDT(RecipientTimeSlot.sent_nr_of_files, search_method='yadcf_range_number'),
         ColumnDT(RecipientTimeSlot.received_nr_of_files, search_method='yadcf_range_number'),
+        ColumnDT(RecipientTimeSlot.sent_nr_of_bytes, search_method='yadcf_range_number'),
         ColumnDT(RecipientTimeSlot.received_nr_of_bytes, search_method='yadcf_range_number')
     ]
 
