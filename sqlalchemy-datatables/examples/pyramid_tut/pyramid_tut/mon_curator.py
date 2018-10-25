@@ -5,14 +5,14 @@ from models import Job, File, Recipient, TimeSlot, RecipientTimeSlot, init
 from sqlalchemy import and_
 
 
-def gen_avail_stats(time_slot_duration):
+def gen_avail_stats(start_time, time_slot_duration):
 
-    #datetime.datetime(year, month, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]])
-    start_time = datetime(2018, 9, 24, 06, 0, 0)
     end_time = start_time + timedelta(seconds=time_slot_duration)
 
     session = init()
 
+    # Query DB for files within the time_slot.
+    # Take only regular files, i.e. of type = 1, and do not consider file list files.
     jobs = session.query(Job).join(File).join(Recipient).\
         filter(File.type == 1).\
         filter(File.time_stamp > start_time).\
@@ -80,6 +80,13 @@ def gen_avail_stats(time_slot_duration):
 
 if __name__ == '__main__':
 
-    time_slot_duration = int(50)
-    gen_avail_stats(time_slot_duration)
+    start_time = datetime(2018, 9, 24, 05, 15, 0)
+    end_time = datetime(2018, 9, 24, 07, 15, 0)
+    time_slot_duration = int(900)
+
+    calc_time = start_time
+    while calc_time < end_time:
+        print("Calculating time slot: " + calc_time.isoformat())
+        gen_avail_stats(calc_time, time_slot_duration)
+        calc_time = calc_time + timedelta(seconds=time_slot_duration)
 
