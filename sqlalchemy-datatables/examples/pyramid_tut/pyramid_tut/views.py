@@ -3,7 +3,7 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.exc import DBAPIError
 from datatables import ColumnDT, DataTables
-from .models import DBSession, Job, File, Recipient
+from .models import DBSession, Job, File, Recipient, TimeSlot, RecipientTimeSlot
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
 def home(request):
@@ -42,6 +42,13 @@ def all_recipients(request):
 def show_job(request):
     """Display a job"""
     return {'project': 'show_job'}
+
+
+@view_config(route_name='monitor',
+             renderer='templates/monitor.jinja2')
+def monitor(request):
+    """Display a job"""
+    return {'project': 'monitor'}
 
 
 @view_config(route_name='job',
@@ -140,6 +147,30 @@ def recipients_data(request):
 
     # defining the initial query depending on your purpose
     query = DBSession.query().select_from(Job).join(File).join(Recipient).filter(File.type == 1)
+
+    # instantiating a DataTable for the query and table needed
+    row_table = DataTables(request.GET, query, columns)
+
+    # returns what is needed by DataTable
+    return row_table.output_result()
+
+
+@view_config(route_name='monitor_data', renderer='json_with_dates')
+def monitor_data(request):
+    """Return server side data."""
+    # defining columns
+
+    columns = [
+        ColumnDT(TimeSlot.start_time, search_method='yadcf_range_date'),
+        ColumnDT(TimeSlot.total_nr_of_files, search_method='yadcf_range_number'),
+        ColumnDT(TimeSlot.total_nr_of_bytes, search_method='yadcf_range_number'),
+        ColumnDT(RecipientTimeSlot.name, search_method='yadcf_multi_select'),
+        ColumnDT(RecipientTimeSlot.received_nr_of_files, search_method='yadcf_range_number'),
+        ColumnDT(RecipientTimeSlot.received_nr_of_bytes, search_method='yadcf_range_number')
+    ]
+
+    # defining the initial query depending on your purpose
+    query = DBSession.query().select_from(TimeSlot).join(RecipientTimeSlot)
 
     # instantiating a DataTable for the query and table needed
     row_table = DataTables(request.GET, query, columns)

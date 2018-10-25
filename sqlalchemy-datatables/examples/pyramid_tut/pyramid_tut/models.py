@@ -403,7 +403,7 @@ class _InitPersist:
     """
     # TODO: Have all configuration read freom same
     config = {'sqlalchemy.url': 'sqlite:////home/espanyol/workspace/tellijobsparser/'
-                        'sqlalchemy-datatables/examples/pyramid_tut/tellijobsparser.sqlite', 'sqlalchemy.echo': 'True'}
+                        'sqlalchemy-datatables/examples/pyramid_tut/tellijobsparser.sqlite', 'sqlalchemy.echo': 'False'}
 
     _engine = engine_from_config(config, 'sqlalchemy.')
     #Base.metadata.drop_all(_engine)
