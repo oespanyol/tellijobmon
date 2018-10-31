@@ -35,6 +35,7 @@ def gen_avail_stats(start_time, time_slot_duration):
 
             for recipient in job.recipients:
                 name = recipient.name
+                # TODO: Initialization of a dictionary can be done a little bit easier
                 if name not in recip_reports.keys():
                     recip_files_dict = {'name': name,
                                         'time_slot_id': time_slot_dict['id'],
@@ -80,13 +81,13 @@ def gen_avail_stats(start_time, time_slot_duration):
 
 if __name__ == '__main__':
 
-    start_time = datetime(2018, 9, 24, 05, 15, 0)
-    end_time = datetime(2018, 9, 24, 07, 15, 0)
-    time_slot_duration = int(900)
+    total_start_time = datetime(2018, 9, 24, 05, 15, 0)
+    total_end_time = datetime(2018, 9, 24, 07, 15, 0)
+    incremental_time_slot_duration = int(900)
 
-    calc_time = start_time
-    while calc_time < end_time:
+    calc_time = total_start_time
+    while calc_time < total_end_time:
         print("Calculating time slot: " + calc_time.isoformat())
-        gen_avail_stats(calc_time, time_slot_duration)
-        calc_time = calc_time + timedelta(seconds=time_slot_duration)
+        gen_avail_stats(calc_time, incremental_time_slot_duration)
+        calc_time = calc_time + timedelta(seconds=incremental_time_slot_duration)
 

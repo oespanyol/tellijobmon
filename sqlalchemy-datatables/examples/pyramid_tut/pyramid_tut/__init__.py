@@ -35,6 +35,9 @@ def main(global_config, **settings):
     config.add_route('monitor', '/monitor')
     config.add_route('monitor_data', '/monitor_data')
 
+    config.add_route('roll_mon', '/roll_mon')
+    config.add_route('roll_mon_data', '/roll_mon_data')
+
 #    config.add_route('all', '/all')
     config.scan()
 
