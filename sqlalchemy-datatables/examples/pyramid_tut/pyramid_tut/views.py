@@ -192,7 +192,7 @@ def monitor_data(request):
     return row_table.output_result()
 
 
-@view_config(route_name='roll_mon_data', renderer='json')
+@view_config(route_name='roll_mon_data', renderer='templates/rolling_monitoring.jinja2')
 def roll_mon_data(request):
 
     start_time = datetime(2018, 9, 24, 05, 15, 0)
@@ -200,59 +200,87 @@ def roll_mon_data(request):
     duration = 900
 
     # TODO : time start/end and slot duration provided by user request
-#    recp_query = DBSession.query(RecipientTimeSlot.name).select_from(TimeSlot).join(RecipientTimeSlot)\
-#        .filter(TimeSlot.start_time > start_time) \
-#        .filter(TimeSlot.end_time < end_time) \
-#        .filter(TimeSlot.duration == duration) \
-#        .all()
-
-    # List of unique recipients
-#    recipients = list(set(recp_query))
-
-#    tsu = defaultdict(list)
-#    for recipient in recipients:
-#        name = recipient[0]
-#        q_results = DBSession.query(TimeSlot.start_time,
-#                                    RecipientTimeSlot.name,
-#                                    RecipientTimeSlot.sent_nr_of_files,
-#                                    RecipientTimeSlot.received_nr_of_files)\
-#            .select_from(TimeSlot).join(RecipientTimeSlot) \
-#            .filter(TimeSlot.start_time > start_time) \
-#            .filter(TimeSlot.end_time < end_time) \
-#            .filter(TimeSlot.duration == duration) \
-#            .filter(RecipientTimeSlot.name == name) \
-#            .all()
-        # Extract the key as the Start Time of each query
-#        for q_result in q_results:
-#            q_ts = q_result[0].isoformat()
-#            print(q_ts)
-#            # Add query results indexed by start time key
-#            tsu[q_ts].append(q_result[1:4])
-
-#    print(tsu)
-#    d = dict(tsu)
-#    print(d)
-
-    columns = [
-        #ColumnDT(TimeSlot.start_time, search_method='yadcf_range_date'),
-        ColumnDT(RecipientTimeSlot.name, search_method='yadcf_multi_select'),
-        ColumnDT(RecipientTimeSlot.sent_nr_of_files, search_method='yadcf_range_number'),
-        ColumnDT(RecipientTimeSlot.received_nr_of_files, search_method='yadcf_range_number'),
-        ColumnDT(RecipientTimeSlot.id)
-    ]
-
-    q_results = DBSession.query()\
-        .select_from(TimeSlot).join(RecipientTimeSlot) \
+    recp_query = DBSession.query(RecipientTimeSlot.name).select_from(TimeSlot).join(RecipientTimeSlot)\
         .filter(TimeSlot.start_time > start_time) \
         .filter(TimeSlot.end_time < end_time) \
         .filter(TimeSlot.duration == duration) \
-        .filter(or_(RecipientTimeSlot.name == 'JAXA_T', RecipientTimeSlot.name == 'CMA_T'))
+        .all()
 
-    # instantiating a DataTable for the query and table needed
-    row_table = DataTables(request.GET, q_results, columns)
+    # List of unique recipients
+    recipients = list(set(recp_query))
 
-    # returns what is needed by DataTable
-    return row_table.output_result()
+    tsu = defaultdict(list)
+    for recipient in recipients:
+        name = recipient[0]
+        q_results = DBSession.query(TimeSlot.start_time,
+                                    RecipientTimeSlot.name,
+                                    RecipientTimeSlot.sent_nr_of_files,
+                                    RecipientTimeSlot.received_nr_of_files)\
+            .select_from(TimeSlot).join(RecipientTimeSlot) \
+            .filter(TimeSlot.start_time > start_time) \
+            .filter(TimeSlot.end_time < end_time) \
+            .filter(TimeSlot.duration == duration) \
+            .filter(RecipientTimeSlot.name == name) \
+            .all()
+       # Extract the key as the Start Time of each query
+        for q_result in q_results:
+            q_ts = q_result[0].isoformat()
+            print(q_ts)
+            # Add query results indexed by start time key
+            tsu[q_ts].append(q_result[1:4])
+
+    print(tsu)
+    d = dict(tsu)
+    print(d)
+
+    return {'project': 'rolling_monitoring'}
+
+
+@view_config(route_name='test', renderer='templates/test.jinja2')
+def test(request):
+    start_time = datetime(2018, 9, 24, 05, 15, 0)
+    end_time = datetime(2018, 9, 24, 07, 15, 0)
+    duration = 900
+
+    # TODO : time start/end and slot duration provided by user request
+    recp_query = DBSession.query(RecipientTimeSlot.name).select_from(TimeSlot).join(RecipientTimeSlot)\
+        .filter(TimeSlot.start_time > start_time) \
+        .filter(TimeSlot.end_time < end_time) \
+        .filter(TimeSlot.duration == duration) \
+        .all()
+
+    # List of unique recipients
+    recipients = list(set(recp_query))
+    # Output is a list of lists of one element
+    # Get only the first element of each list
+    recipients = [item[0] for item in recipients]
+
+    tsu = defaultdict(list)
+    for recipient in recipients:
+        q_results = DBSession.query(TimeSlot.start_time,
+                                    RecipientTimeSlot.name,
+                                    RecipientTimeSlot.sent_nr_of_files,
+                                    RecipientTimeSlot.received_nr_of_files)\
+            .select_from(TimeSlot).join(RecipientTimeSlot) \
+            .filter(TimeSlot.start_time > start_time) \
+            .filter(TimeSlot.end_time < end_time) \
+            .filter(TimeSlot.duration == duration) \
+            .filter(RecipientTimeSlot.name == recipient) \
+            .all()
+       # Extract the key as the Start Time of each query
+        for q_result in q_results:
+            q_ts = q_result[0].isoformat()
+            data = {q_result[1]: {'sentf': q_result[2],
+                                  'recvf': q_result[3]}}
+            # Add query results indexed by start time key
+            tsu[q_ts].append(data)
+
+    roll_mon_dict = dict(tsu)
+    print(roll_mon_dict)
+
+    url_list = {'roll_mon_dict': roll_mon_dict, 'recipients': recipients}
+
+    return url_list
 
 
 conn_err_msg = """\

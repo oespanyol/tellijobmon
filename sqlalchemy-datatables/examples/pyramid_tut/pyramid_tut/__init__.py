@@ -38,7 +38,8 @@ def main(global_config, **settings):
     config.add_route('roll_mon', '/roll_mon')
     config.add_route('roll_mon_data', '/roll_mon_data')
 
-#    config.add_route('all', '/all')
+    config.add_route('test', '/test')
+
     config.scan()
 
     # only for advanced example
