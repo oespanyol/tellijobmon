@@ -3,11 +3,10 @@ from pyramid.response import Response
 from pyramid.view import view_config
 from sqlalchemy.exc import DBAPIError
 from datatables import ColumnDT, DataTables
-from .models import DBSession, Job, File, Recipient, TimeSlot, RecipientTimeSlot
+from .models import DBSession, Job, File, Recipient, TimeSlot, RecipientTimeSlot, nested_dict
 from datetime import datetime
 from collections import defaultdict
-import json
-from sqlalchemy import or_
+
 
 @view_config(route_name='home', renderer='templates/home.jinja2')
 def home(request):
@@ -255,7 +254,7 @@ def test(request):
     # Get only the first element of each list
     recipients = [item[0] for item in recipients]
 
-    tsu = defaultdict(list)
+    roll_mon_dict = nested_dict(3, dict)
     for recipient in recipients:
         q_results = DBSession.query(TimeSlot.start_time,
                                     RecipientTimeSlot.name,
@@ -267,16 +266,22 @@ def test(request):
             .filter(TimeSlot.duration == duration) \
             .filter(RecipientTimeSlot.name == recipient) \
             .all()
-       # Extract the key as the Start Time of each query
-        for q_result in q_results:
-            q_ts = q_result[0].isoformat()
-            data = {q_result[1]: {'sentf': q_result[2],
-                                  'recvf': q_result[3]}}
-            # Add query results indexed by start time key
-            tsu[q_ts].append(data)
 
-    roll_mon_dict = dict(tsu)
+        # Assign numeric positions to the results of the query for future reference and readability
+        pos_ts = 0
+        pos_name = 1
+        pos_sentf = 2
+        pos_recvf = 3
+
+        for q_result in q_results:
+            q_ts = q_result[pos_ts].isoformat()
+            q_rcp = q_result[pos_name]
+            roll_mon_dict[q_ts][q_rcp]['sentf'] = q_result[pos_sentf]
+            roll_mon_dict[q_ts][q_rcp]['recvf'] = q_result[pos_recvf]
+
     print(roll_mon_dict)
+
+    print(roll_mon_dict['2018-09-24T06:30:00']['ECMWF']['recvf'])
 
     url_list = {'roll_mon_dict': roll_mon_dict, 'recipients': recipients}
 

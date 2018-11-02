@@ -22,10 +22,12 @@
 {% endfor %}
 </TR>
 
-{% for key in roll_mon_dict.iterkeys() %}
+{% for key1 in roll_mon_dict.keys() %}
 <TR>
-  <TD>{{ key }}</TD>
-  <TD>{{ roll_mon_dict[key][1]  }}
+    <TD>{{ key1 }}</TD>
+  {% for recipient in recipients %}
+    <TD>{{ roll_mon_dict[key1][recipient]['recvf'] }} of {{ roll_mon_dict[key1][recipient]['sentf'] }}</TD>
+  {% endfor %}
 </TR>
 {% endfor %}
 

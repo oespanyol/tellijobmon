@@ -9,6 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (backref, relationship, scoped_session, sessionmaker)
 from sqlalchemy import engine_from_config
 from zope.sqlalchemy import ZopeTransactionExtension
+from collections import defaultdict
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
@@ -417,3 +418,10 @@ class _InitPersist:
 def init():
     session = _InitPersist().session
     return session
+
+
+def nested_dict(n, type):
+    if n == 1:
+        return defaultdict(type)
+    else:
+        return defaultdict(lambda: nested_dict(n-1, type))
