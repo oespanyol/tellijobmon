@@ -49,7 +49,9 @@
             {% for recipient in recipients %}
             <td>
             {% if roll_mon_dict[key][recipient] %}
-              {{ roll_mon_dict[key][recipient]['got_f'] }} of {{ roll_mon_dict[key][recipient]['sent_f'] }}
+              <a href="recipients?name={{ recipient }}&start={{ roll_mon_dict[key]['start'] }}&end={{ roll_mon_dict[key]['end'] }}">
+                {{ roll_mon_dict[key][recipient]['got_f'] }} of {{ roll_mon_dict[key][recipient]['sent_f'] }}
+              </a>
             {% else %}
               0 of 0
             {% endif %}

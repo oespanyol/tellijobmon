@@ -206,6 +206,7 @@ def roll_mon(request):
     roll_mon_dict = nested_dict(3, dict)
     for recipient in recipients:
         q_results = DBSession.query(TimeSlot.start_time,
+                                    TimeSlot.end_time,
                                     TimeSlot.total_nr_of_files,
                                     RecipientTimeSlot.name,
                                     RecipientTimeSlot.sent_nr_of_files,
@@ -219,14 +220,17 @@ def roll_mon(request):
 
         # Assign numeric positions to the results of the query for future reference and readability
         pos_ts = 0
-        pos_total_f = 1
-        pos_name = 2
-        pos_sent_f = 3
-        pos_got_f = 4
+        pos_te = 1
+        pos_total_f = 2
+        pos_name = 3
+        pos_sent_f = 4
+        pos_got_f = 5
 
         for q_result in q_results:
             q_ts = q_result[pos_ts].isoformat()
             q_rcp = q_result[pos_name]
+            roll_mon_dict[q_ts]['start'] = q_result[pos_ts].isoformat()
+            roll_mon_dict[q_ts]['end'] = q_result[pos_te].isoformat()
             roll_mon_dict[q_ts]['total_f'] = q_result[pos_total_f]
             roll_mon_dict[q_ts][q_rcp]['sent_f'] = q_result[pos_sent_f]
             roll_mon_dict[q_ts][q_rcp]['got_f'] = q_result[pos_got_f]

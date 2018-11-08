@@ -81,14 +81,18 @@
         filter_type: "range_number"
       }]);
 
+      let filters = []
       <!-- Preload a filter, the ajaxSource must be set to true, otherwise it triggers two calls to the server side -->
-      {% if 'recp' in request_get.keys() %}
-          let recp = "{{ request_get['recp'] }}";
-          yadcf.exFilterColumn(table, [[2, [recp]]], true);
-      {% else %}
-        table.draw();
+      {% if 'name' in request_get.keys() %}
+          let name = "{{ request_get['name'] }}";
+          filters.push([2, [name]])
       {% endif %}
-
+      {% if 'start' and 'end' in request_get.keys() %}
+          let start = "{{ request_get['start'] }}";
+          let end = "{{ request_get['end'] }}";
+          filters.push([3, {from: start, to: end}])
+      {% endif %}
+          yadcf.exFilterColumn(table, filters, true);
     });
   </script>
 
