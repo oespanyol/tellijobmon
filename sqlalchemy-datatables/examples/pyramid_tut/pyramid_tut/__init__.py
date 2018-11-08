@@ -31,15 +31,9 @@ def main(global_config, **settings):
     config.add_route('files_data', '/files_data')
     config.add_route('file', '/file')
     config.add_route('show_file', '/show_file/{id}')
-
-    config.add_route('monitor', '/monitor')
-    config.add_route('monitor_data', '/monitor_data')
-
+    config.add_route('stats', '/stats')
+    config.add_route('stats_data', '/stats_data')
     config.add_route('roll_mon', '/roll_mon')
-    config.add_route('roll_mon_data', '/roll_mon_data')
-
-    config.add_route('test', '/test')
-
     config.scan()
 
     # only for advanced example

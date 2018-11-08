@@ -4,64 +4,93 @@
   <link href="https://cdn.datatables.net/1.10.10/css/jquery.dataTables.css" rel="stylesheet">
 {% endblock %}
 
+<style>
+    td.complete {
+        font-weight: bold;
+        color: white;
+        background-color: green;
+    }
+    td.missing {
+        font-weight: bold;
+        color: white;
+        background-color: orange;
+    }
+    td.all-lost {
+        font-weight: bold;
+        color: white;
+        background-color: red;
+    }
+    td.no-data {
+        font-weight: bold;
+        color: white;
+        background-color: green;
+    }
+</style>
+
 {% block content %}
   <div class="row-fluid">
     <div class="col-lg-12">
       <h2>Rolling Monitoring</h2>
-      <table id="file_details" class="table table-condensed table-striped table-hover" cellspacing="0" width="80%">
+      <table id="dt_roll_mon" class="table table-striped table-hover text-nowrap" cellspacing="0" width="100%" >
         <thead>
           <tr>
-            <th>Time slot</th>
-            <th>Recipient</th>
-            <th>Sent</th>
-            <th>Received</th>
-            <th>Time slot</th>
-            <th>Recipient</th>
-            <th>Sent</th>
-            <th>Received</th>
+            <th>Time Slot</th>
+            <th>Total Files</th>
+            {% for recipient in recipients %}
+            <th>{{ recipient }}</th>
+            {% endfor %}
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody>
+          {% for key in roll_mon_dict.keys() %}
+          <tr>
+            <td>{{ key }}</td>
+            <td>{{ roll_mon_dict[key]['total_f'] }}</td>
+            {% for recipient in recipients %}
+            <td>
+            {% if roll_mon_dict[key][recipient] %}
+              {{ roll_mon_dict[key][recipient]['got_f'] }} of {{ roll_mon_dict[key][recipient]['sent_f'] }}
+            {% else %}
+              0 of 0
+            {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
     </div>
   </div>
 {% endblock %}
 
 {% block extra_javascripts %}
-    <style>
-    /* hide general search */
-    .dataTables_filter {
-      visibility: hidden
-    }
-  </style>
-  <script src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
-  <script type="text/javascript" charset="utf-8">
-    $(document).ready(function(){
-      var table = $('#file_details').DataTable({
-        "processing": false,
-        "serverSide": true,
-        "ajax": {
-          "url": "{{ request.route_path('roll_mon_data') }}"
-        }
-      });
 
-      yadcf.init(table, [{
-        column_number: 0
-      }, {
-        column_number: 1
-      }, {
-        column_number: 2
-      }, {
-        column_number: 3
-      }, {
-        column_number: 4
-      }, {
-        column_number: 5
-      }, {
-        column_number: 6
-      }, {
-        column_number: 7
-      }]);
+  <script src="https://tdamsma.github.io/datatables-yadcf-bootstrap-webpack/bundle-yadcf.js"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+      var table = $('#dt_roll_mon').DataTable({
+          "columnDefs": [{
+            "targets": "_all",
+            "createdCell": function (td, cellData, rowData, row, col) {
+                let data = cellData.split(/\s+/);
+                if (data.length == 3 && data[1] == 'of') {
+                    let got_f = data[0]
+                    let sent_f = data[2]
+                    if ( got_f == 0 &&  sent_f ==0 ) {
+                      $(td).addClass('no-data')
+                    } else if (got_f == 0 &&  sent_f !=0 ) {
+                      $(td).addClass('all-lost')
+                    } else if (got_f == sent_f ) {
+                      $(td).addClass('complete')
+                    } else if (got_f < sent_f) {
+                      $(td).addClass('missing')
+                    }
+                }
+            }
+          }]
+      });
     });
   </script>
+
 {% endblock %}

@@ -36,8 +36,8 @@ def all_files(request):
 @view_config(route_name='recipients',
              renderer='templates/recipients.jinja2')
 def all_recipients(request):
-    """Search with yadcf"""
-    return {'project': 'recipients'}
+
+    return {'project': 'recipients', 'request_get': request.GET}
 
 
 @view_config(route_name='show_job',
@@ -47,18 +47,11 @@ def show_job(request):
     return {'project': 'show_job'}
 
 
-@view_config(route_name='monitor',
-             renderer='templates/monitor.jinja2')
-def monitor(request):
+@view_config(route_name='stats',
+             renderer='templates/stats.jinja2')
+def stats(request):
     """Display a job"""
-    return {'project': 'monitor'}
-
-
-@view_config(route_name='roll_mon',
-             renderer='templates/roll_mon.jinja2')
-def roll_mon(request):
-    """Display a job"""
-    return {'project': 'roll_mon'}
+    return {'project': 'stats'}
 
 
 @view_config(route_name='job',
@@ -165,8 +158,8 @@ def recipients_data(request):
     return row_table.output_result()
 
 
-@view_config(route_name='monitor_data', renderer='json_with_dates')
-def monitor_data(request):
+@view_config(route_name='stats_data', renderer='json_with_dates')
+def stats_data(request):
     """Return server side data."""
     # defining columns
 
@@ -191,52 +184,8 @@ def monitor_data(request):
     return row_table.output_result()
 
 
-@view_config(route_name='roll_mon_data', renderer='templates/rolling_monitoring.jinja2')
-def roll_mon_data(request):
-
-    start_time = datetime(2018, 9, 24, 05, 15, 0)
-    end_time = datetime(2018, 9, 24, 07, 15, 0)
-    duration = 900
-
-    # TODO : time start/end and slot duration provided by user request
-    recp_query = DBSession.query(RecipientTimeSlot.name).select_from(TimeSlot).join(RecipientTimeSlot)\
-        .filter(TimeSlot.start_time > start_time) \
-        .filter(TimeSlot.end_time < end_time) \
-        .filter(TimeSlot.duration == duration) \
-        .all()
-
-    # List of unique recipients
-    recipients = list(set(recp_query))
-
-    tsu = defaultdict(list)
-    for recipient in recipients:
-        name = recipient[0]
-        q_results = DBSession.query(TimeSlot.start_time,
-                                    RecipientTimeSlot.name,
-                                    RecipientTimeSlot.sent_nr_of_files,
-                                    RecipientTimeSlot.received_nr_of_files)\
-            .select_from(TimeSlot).join(RecipientTimeSlot) \
-            .filter(TimeSlot.start_time > start_time) \
-            .filter(TimeSlot.end_time < end_time) \
-            .filter(TimeSlot.duration == duration) \
-            .filter(RecipientTimeSlot.name == name) \
-            .all()
-       # Extract the key as the Start Time of each query
-        for q_result in q_results:
-            q_ts = q_result[0].isoformat()
-            print(q_ts)
-            # Add query results indexed by start time key
-            tsu[q_ts].append(q_result[1:4])
-
-    print(tsu)
-    d = dict(tsu)
-    print(d)
-
-    return {'project': 'rolling_monitoring'}
-
-
-@view_config(route_name='test', renderer='templates/test.jinja2')
-def test(request):
+@view_config(route_name='roll_mon', renderer='templates/roll_mon.jinja2')
+def roll_mon(request):
     start_time = datetime(2018, 9, 24, 05, 15, 0)
     end_time = datetime(2018, 9, 24, 07, 15, 0)
     duration = 900
@@ -257,6 +206,7 @@ def test(request):
     roll_mon_dict = nested_dict(3, dict)
     for recipient in recipients:
         q_results = DBSession.query(TimeSlot.start_time,
+                                    TimeSlot.total_nr_of_files,
                                     RecipientTimeSlot.name,
                                     RecipientTimeSlot.sent_nr_of_files,
                                     RecipientTimeSlot.received_nr_of_files)\
@@ -269,23 +219,21 @@ def test(request):
 
         # Assign numeric positions to the results of the query for future reference and readability
         pos_ts = 0
-        pos_name = 1
-        pos_sentf = 2
-        pos_recvf = 3
+        pos_total_f = 1
+        pos_name = 2
+        pos_sent_f = 3
+        pos_got_f = 4
 
         for q_result in q_results:
             q_ts = q_result[pos_ts].isoformat()
             q_rcp = q_result[pos_name]
-            roll_mon_dict[q_ts][q_rcp]['sentf'] = q_result[pos_sentf]
-            roll_mon_dict[q_ts][q_rcp]['recvf'] = q_result[pos_recvf]
+            roll_mon_dict[q_ts]['total_f'] = q_result[pos_total_f]
+            roll_mon_dict[q_ts][q_rcp]['sent_f'] = q_result[pos_sent_f]
+            roll_mon_dict[q_ts][q_rcp]['got_f'] = q_result[pos_got_f]
 
-    print(roll_mon_dict)
+    output = {'roll_mon_dict': roll_mon_dict, 'recipients': recipients}
 
-    print(roll_mon_dict['2018-09-24T06:30:00']['ECMWF']['recvf'])
-
-    url_list = {'roll_mon_dict': roll_mon_dict, 'recipients': recipients}
-
-    return url_list
+    return output
 
 
 conn_err_msg = """\
