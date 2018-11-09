@@ -10,20 +10,35 @@
         color: white;
         background-color: green;
     }
+    td.complete > a {
+        color: white;
+    }
+
     td.missing {
         font-weight: bold;
         color: white;
         background-color: orange;
     }
+    td.missing > a {
+        color: white;
+    }
+
     td.all-lost {
         font-weight: bold;
         color: white;
         background-color: red;
     }
+    td.all-lost > a {
+        color: white;
+    }
+
     td.no-data {
         font-weight: bold;
         color: white;
         background-color: green;
+    }
+    td.no-data > a {
+        color: white;
     }
 </style>
 
@@ -47,7 +62,7 @@
             <td>{{ key }}</td>
             <td>{{ roll_mon_dict[key]['total_f'] }}</td>
             {% for recipient in recipients %}
-            <td>
+            <td class="complete">
             {% if roll_mon_dict[key][recipient] %}
               <a href="recipients?name={{ recipient }}&start={{ roll_mon_dict[key]['start'] }}&end={{ roll_mon_dict[key]['end'] }}">
                 {{ roll_mon_dict[key][recipient]['got_f'] }} of {{ roll_mon_dict[key][recipient]['sent_f'] }}
@@ -75,7 +90,10 @@
           "columnDefs": [{
             "targets": "_all",
             "createdCell": function (td, cellData, rowData, row, col) {
-                let data = cellData.split(/\s+/);
+                let txt = $(td).text().trim()
+                let data = txt.split(/\s+/);
+                console.log(data)
+
                 if (data.length == 3 && data[1] == 'of') {
                     let got_f = data[0]
                     let sent_f = data[2]

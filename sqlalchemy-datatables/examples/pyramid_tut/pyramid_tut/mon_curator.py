@@ -11,13 +11,7 @@ def gen_avail_stats(start_time, time_slot_duration):
 
     session = init()
 
-    # Query DB for files within the time_slot.
-    # Take only regular files, i.e. of type = 1, and do not consider file list files.
-    jobs = session.query(Job).join(File).join(Recipient).\
-        filter(File.type == 1).\
-        filter(File.time_stamp > start_time).\
-        filter(File.time_stamp <= end_time).all()
-
+    # Define basic data structure as a dictionary
     time_slot_dict = {'id': start_time.strftime("%s")+'+'+str(time_slot_duration),
                       'duration': time_slot_duration,
                       'total_nr_of_bytes': 0,
@@ -25,32 +19,49 @@ def gen_avail_stats(start_time, time_slot_duration):
                       'start_time': start_time,
                       'end_time': end_time}
 
-    # TODO: It can probably be done with less for nesting
+    # Query DB for files within the time_slot.
+    # Take only regular files, i.e. of type = 1, and do not consider file list files.
+    total_results = session.query(File).select_from(File).\
+        filter(File.type == 1).\
+        filter(File.time_stamp > start_time).\
+        filter(File.time_stamp <= end_time).all()
+
+    # Iterate over the results to compute the totals
+    for result in total_results:
+        time_slot_dict['total_nr_of_files'] += 1
+        time_slot_dict['total_nr_of_bytes'] += result.size
+
+    # Query DB for files and recipients within the time_slot.
+    # Take only regular files, i.e. of type = 1, and do not consider file list files.
+    recip_results = session.query(File, Recipient).select_from(File).\
+        join(Recipient, File.files_acknowledge_id == Recipient.files_acknowledge_id).\
+        filter(File.type == 1).\
+        filter(File.time_stamp > start_time).\
+        filter(File.time_stamp <= end_time).all()
+
     recip_reports = {}
-    for job in jobs:
-        for a_file in job.files:
 
-            time_slot_dict['total_nr_of_files'] += 1
-            time_slot_dict['total_nr_of_bytes'] += a_file.size
+    for result in recip_results:
+        a_file = result[0]
+        a_recp = result[1]
 
-            for recipient in job.recipients:
-                name = recipient.name
-                # TODO: Initialization of a dictionary can be done a little bit easier
-                if name not in recip_reports.keys():
-                    recip_files_dict = {'name': name,
-                                        'time_slot_id': time_slot_dict['id'],
-                                        'sent_nr_of_bytes': 0,
-                                        'sent_nr_of_files': 0,
-                                        'received_nr_of_bytes': 0,
-                                        'received_nr_of_files': 0}
-                    recip_reports[name] = recip_files_dict
+        # for recipient in result.recipients:
+        name = a_recp.name
+        if name not in recip_reports.keys():
+            recip_files_dict = {'name': name,
+                                'time_slot_id': time_slot_dict['id'],
+                                'sent_nr_of_bytes': 0,
+                                'sent_nr_of_files': 0,
+                                'received_nr_of_bytes': 0,
+                                'received_nr_of_files': 0}
+            recip_reports[name] = recip_files_dict
 
-                recip_reports[name]['sent_nr_of_bytes'] += a_file.size
-                recip_reports[name]['sent_nr_of_files'] += 1
+        recip_reports[name]['sent_nr_of_bytes'] += a_file.size
+        recip_reports[name]['sent_nr_of_files'] += 1
 
-                if recipient.complete:
-                    recip_reports[name]['received_nr_of_bytes'] += a_file.size
-                    recip_reports[name]['received_nr_of_files'] += 1
+        if a_recp.complete:
+            recip_reports[name]['received_nr_of_bytes'] += a_file.size
+            recip_reports[name]['received_nr_of_files'] += 1
 
     # Persist time slots in database
     time_slot_query = session.query(TimeSlot).filter(TimeSlot.id == time_slot_dict['id']).first()
